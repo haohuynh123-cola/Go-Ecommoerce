@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
 
@@ -17,10 +18,10 @@ func NewUserRepository(db *sqlx.DB) domain.IUserRepository {
 	}
 }
 
-func (u UserRepository) FindUserByEmail(email string) (*domain.User, error) {
+func (u UserRepository) FindUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user domain.User
 
-	err := u.db.Get(&user, "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1", email)
+	err := u.db.GetContext(ctx, &user, "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -31,10 +32,11 @@ func (u UserRepository) FindUserByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (u UserRepository) CreateUser(user *domain.User) (*domain.User, error) {
+func (u UserRepository) CreateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	query := `INSERT INTO users(name,email,password) VALUES(?,?,?)`
 
-	result, err := u.db.Exec(
+	result, err := u.db.ExecContext(
+		ctx,
 		query,
 		user.Name,
 		user.Email,
@@ -55,10 +57,10 @@ func (u UserRepository) CreateUser(user *domain.User) (*domain.User, error) {
 	return user, nil
 }
 
-func (u UserRepository) FindUserByID(id int64) (*domain.MeResult, error) {
+func (u UserRepository) FindUserByID(ctx context.Context, id int64) (*domain.MeResult, error) {
 	var user domain.MeResult
 
-	err := u.db.Get(&user, "SELECT id, name, email FROM users WHERE id = ? LIMIT 1", id)
+	err := u.db.GetContext(ctx, &user, "SELECT id, name, email FROM users WHERE id = ? LIMIT 1", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

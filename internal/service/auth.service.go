@@ -1,11 +1,10 @@
 package service
 
 import (
+	"context"
 	"haohuynh123-cola/ecommce/internal/crypto"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
-
-	"github.com/gin-gonic/gin"
 )
 
 type AuthService struct {
@@ -20,9 +19,9 @@ func NewAuthService(repository domain.IUserRepository, secretKey string) domain.
 	}
 }
 
-func (as *AuthService) Login(req dto.RequestLogin) (*dto.ResponseLogin, error) {
+func (as *AuthService) Login(ctx context.Context, req dto.RequestLogin) (*dto.ResponseLogin, error) {
 	//Find user by email
-	user, err := as.repo.FindUserByEmail(req.Email)
+	user, err := as.repo.FindUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +49,9 @@ func (as *AuthService) Login(req dto.RequestLogin) (*dto.ResponseLogin, error) {
 	}, nil
 }
 
-func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister, error) {
+func (as *AuthService) Register(ctx context.Context, req dto.RequestRegister) (*dto.ResponseRegister, error) {
 	//Check Email exist
-	emailExist, err := as.repo.FindUserByEmail(req.Email)
+	emailExist, err := as.repo.FindUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +72,7 @@ func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister,
 		Password: password,
 	}
 
-	createdUser, err := as.repo.CreateUser(user)
+	createdUser, err := as.repo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -85,14 +84,13 @@ func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister,
 	}, nil
 }
 
-func (as *AuthService) GetMe(c *gin.Context) (*dto.ResponseMe, error) {
+func (as *AuthService) GetMe(ctx context.Context, userID int64) (*dto.ResponseMe, error) {
 	//Get user from context
-	userId, exists := c.Get("user_id")
-	if !exists {
+	if userID == 0 {
 		return nil, domain.ErrTokenInvalid
 	}
 
-	user, err := as.repo.FindUserByID(userId.(int64))
+	user, err := as.repo.FindUserByID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrTokenInvalid
 	}

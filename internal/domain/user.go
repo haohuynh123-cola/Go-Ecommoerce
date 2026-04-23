@@ -1,5 +1,7 @@
 package domain
 
+import "context"
+
 type User struct {
 	ID       int64
 	Name     string
@@ -19,7 +21,7 @@ type UserLogin struct {
 }
 
 type IUserRepository interface {
-	FindUserByEmail(email string) (*User, error)
-	FindUserByID(id int64) (*MeResult, error)
-	CreateUser(req *User) (*User, error)
+	FindUserByEmail(ctx context.Context, email string) (*User, error)
+	FindUserByID(ctx context.Context, id int64) (*MeResult, error)
+	CreateUser(ctx context.Context, req *User) (*User, error)
 }

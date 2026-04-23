@@ -2,12 +2,7 @@
 
 ## Mục tiêu dự án
 
-Xây dựng backend ecommerce bằng Go để:
-
-- Nâng kỹ năng Go backend thực chiến
-- Có project đưa vào CV / GitHub
-- Chuẩn bị phỏng vấn job Go backend
-- Chuyển từ PHP Laravel sang Backend Engineer profile mạnh hơn
+Xây dựng backend ecommerce bằng Go
 
 ---
 
@@ -15,7 +10,7 @@ Xây dựng backend ecommerce bằng Go để:
 
 - Go
 - Gin
-- PostgreSQL
+- Mysql
 - Redis
 - Docker Compose
 - JWT Auth
@@ -92,9 +87,9 @@ Project chạy được + auth cơ bản.
 - ENV config -> xong
 - Migration users table -> xong
 - Register API -> xong
-- Login API
-- JWT middleware
-- Get profile API
+- Login API -> xong
+- JWT middleware  -> xong
+- Get profile API  -> xong
 
 ## Deliverable
 

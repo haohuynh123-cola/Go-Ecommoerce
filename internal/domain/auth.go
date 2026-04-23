@@ -1,13 +1,12 @@
 package domain
 
 import (
+	"context"
 	"haohuynh123-cola/ecommce/internal/dto"
-
-	"github.com/gin-gonic/gin"
 )
 
 type IAuthService interface {
-	Login(req dto.RequestLogin) (*dto.ResponseLogin, error)
-	Register(req dto.RequestRegister) (*dto.ResponseRegister, error)
-	GetMe(c *gin.Context) (*dto.ResponseMe, error)
+	Login(ctx context.Context, req dto.RequestLogin) (*dto.ResponseLogin, error)
+	Register(ctx context.Context, req dto.RequestRegister) (*dto.ResponseRegister, error)
+	GetMe(ctx context.Context, userID int64) (*dto.ResponseMe, error)
 }
