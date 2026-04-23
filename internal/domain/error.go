@@ -13,4 +13,6 @@ var (
 	ErrCodeUnauthorized       = "unauthorized"
 	ErrCodeEmailAlreadyExists = "email_already_exists"
 	ErrCodeValidation         = "validation_error"
+	ErrCodeNotFound           = "not_found"
+
 )

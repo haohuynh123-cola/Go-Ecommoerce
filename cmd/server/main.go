@@ -29,6 +29,12 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService, cfg.JWT)
 	authHandler.RegisterRoutes(r)
 
+	// Register product routes
+	productRepo := repo.NewProductRepository(db)
+	productService := service.NewProductService(productRepo)
+	productHandler := handler.NewProductHandler(productService)
+	productHandler.RegisterRoutes(r)
+
 	// Start server on port 8080 (default)
 	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)
 	if err := r.Run(); err != nil {
