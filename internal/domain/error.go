@@ -9,10 +9,12 @@ var (
 	ErrInvalidCredentials     = errors.New("invalid credentials")
 	ErrUserNotFound           = errors.New("user not found")
 	ErrTokenInvalid           = errors.New("invalid token")
+	ErrSKUAlreadyExists       = errors.New("SKU already exists")
 	ErrCodeInternal           = "internal_error"
 	ErrCodeUnauthorized       = "unauthorized"
 	ErrCodeEmailAlreadyExists = "email_already_exists"
 	ErrCodeValidation         = "validation_error"
 	ErrCodeNotFound           = "not_found"
-
+	ErrCodeInvalidRequest     = "invalid_request"
+	ErrCodeSKUAlreadyExists   = "sku_already_exists"
 )

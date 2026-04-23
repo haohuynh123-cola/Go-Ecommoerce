@@ -1,9 +1,20 @@
 @SERVER=http://localhost:8080/api/v1
 //Token triggered after login, copy and paste here for testing protected routes
 
-# Test user registration
+# Get list of products
 GET {{SERVER}}/products
 
+###
+#Create a new product (requires authentication)
+POST {{SERVER}}/products
+Content-Type: application/json
 
+{
+  "name": "Sample Product",
+  "description": "This is a sample product.",
+  "price": 19.99,
+  "stock": 100,
+  "sku": "SP-001"
+}
 
 

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"haohuynh123-cola/ecommce/internal/domain"
+	"haohuynh123-cola/ecommce/internal/dto"
 	"haohuynh123-cola/ecommce/pkg"
 	"net/http"
 
@@ -41,7 +42,24 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 }
 
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	// Implement logic to create a new product
+	var req dto.CreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "invalid request"))
+		return
+	}
+
+	createdProduct, err := h.productService.CreateProduct(c.Request.Context(), &req)
+
+	if err != nil {
+		if err == domain.ErrSKUAlreadyExists {
+			c.JSON(http.StatusConflict, pkg.ErrorResponse(domain.ErrCodeSKUAlreadyExists, "SKU already exists"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to create product"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, pkg.SuccessResponse(createdProduct))
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {

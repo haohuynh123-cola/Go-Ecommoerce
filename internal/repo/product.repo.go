@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
 
 	"github.com/jmoiron/sqlx"
@@ -34,7 +35,30 @@ func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*doma
 
 func (r *ProductRepository) CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	// Implement logic to create a new product in the database
-	return nil, nil
+	query := `INSERT INTO products(name, description, sku, price, stock) VALUES(?,?,?,?,?)`
+
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		product.Name,
+		product.Description,
+		product.SKU,
+		product.Price,
+		product.Stock,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	product.ID = id
+
+	return product, nil
 }
 
 func (r *ProductRepository) UpdateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
@@ -45,4 +69,18 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, product *domain.P
 func (r *ProductRepository) DeleteProduct(ctx context.Context, id int64) error {
 	// Implement logic to delete a product from the database
 	return nil
+}
+
+func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (*domain.Product, error) {
+	// Implement logic to get a product by SKU from the database
+	query := `SELECT id, name, description, sku, price, stock FROM products WHERE sku = ? LIMIT 1`
+	var product domain.Product
+	err := r.db.GetContext(ctx, &product, query, sku)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &product, nil
 }
