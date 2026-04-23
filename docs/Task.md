@@ -88,8 +88,8 @@ Project chạy được + auth cơ bản.
 - Migration users table -> xong
 - Register API -> xong
 - Login API -> xong
-- JWT middleware  -> xong
-- Get profile API  -> xong
+- JWT middleware -> xong
+- Get profile API -> xong
 
 ## Deliverable
 

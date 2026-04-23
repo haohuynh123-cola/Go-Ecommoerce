@@ -14,7 +14,18 @@ Content-Type: application/json
   "description": "This is a sample product.",
   "price": 19.99,
   "stock": 100,
-  "sku": "SP-001"
+  "sku": "SP-003"
 }
 
 
+#### Update an existing product (requires authentication)
+PUT {{SERVER}}/products/1
+Content-Type: application/json
+
+{
+  "name": "Updated Product Name",
+  "description": "Updated description for the product.",
+  "price": 24.99,
+  "stock": 80,
+  "sku": "SP-001"
+}

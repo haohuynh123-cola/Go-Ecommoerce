@@ -6,18 +6,18 @@ import (
 )
 
 type Product struct {
-	ID          int64   `db:"id"`
-	Name        string  `db:"name"`
-	Description string  `db:"description"`
-	SKU         string  `db:"sku"`
-	Price       float64 `db:"price"`
-	Stock       int     `db:"stock"`
+	ID          int64   `db:"id" json:"id"`
+	Name        string  `db:"name" json:"name"`
+	Description string  `db:"description" json:"description"`
+	SKU         string  `db:"sku" json:"sku"`
+	Price       float64 `db:"price" json:"price"`
+	Stock       int     `db:"stock" json:"stock"`
 }
 
 type IProductService interface {
 	CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
-	UpdateProduct(ctx context.Context, req *dto.UpdateProductRequest) (*Product, error)
+	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context) ([]*Product, error)
 }
@@ -25,7 +25,7 @@ type IProductService interface {
 type IProductRepository interface {
 	CreateProduct(ctx context.Context, product *Product) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
-	UpdateProduct(ctx context.Context, product *Product) (*Product, error)
+	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context) ([]*Product, error)
 	GetProductBySKU(ctx context.Context, sku string) (*Product, error)

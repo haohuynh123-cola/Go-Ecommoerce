@@ -27,7 +27,14 @@ func (s *ProductService) ListProducts(ctx context.Context) ([]*domain.Product, e
 
 func (s *ProductService) GetProductByID(ctx context.Context, id int64) (*domain.Product, error) {
 	// Implement logic to get a product by ID
-	return nil, nil
+	product, err := s.repo.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, domain.ErrProductNotFound
+	}
+	return product, nil
 }
 
 func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*domain.Product, error) {
@@ -56,12 +63,47 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProdu
 	return createdProduct, nil
 }
 
-func (s *ProductService) UpdateProduct(ctx context.Context, req *dto.UpdateProductRequest) (*domain.Product, error) {
+func (s *ProductService) UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*domain.Product, error) {
+	//check if product exists
+	existingProduct, err := s.repo.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existingProduct == nil {
+		return nil, domain.ErrProductNotFound
+	}
+
+	// Convert UpdateProductRequest to Product domain model
+	product := &domain.Product{
+		Name:        req.Name,
+		Description: req.Description,
+		SKU:         req.SKU,
+		Price:       req.Price,
+		Stock:       req.Stock,
+	}
+
+	updatedProduct, err := s.repo.UpdateProduct(ctx, id, product)
+	if err != nil {
+		return nil, err
+	}
+	return updatedProduct, nil
 	// Implement logic to update an existing product
-	return nil, nil
 }
 
 func (s *ProductService) DeleteProduct(ctx context.Context, id int64) error {
 	// Implement logic to delete a product
+	// Check if product exists
+	existingProduct, err := s.repo.GetProductByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existingProduct == nil {
+		return domain.ErrProductNotFound
+	}
+
+	err = s.repo.DeleteProduct(ctx, id)
+	if err != nil {
+		return err
+	}
 	return nil
 }

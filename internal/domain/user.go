@@ -2,23 +2,23 @@ package domain
 
 import "context"
 
-// Entiy
+// Entity
 type User struct {
-	ID       int64  `db:"id"`
-	Name     string `db:"name"`
-	Email    string `db:"email"`
-	Password string `db:"password"`
+	ID       int64  `db:"id" json:"id"`
+	Name     string `db:"name" json:"name"`
+	Email    string `db:"email" json:"email"`
+	Password string `db:"password" json:"password"`
 }
 
 type MeResult struct {
-	ID    int64  `db:"id"`
-	Name  string `db:"name"`
-	Email string `db:"email"`
+	ID    int64  `db:"id" json:"id"`
+	Name  string `db:"name" json:"name"`
+	Email string `db:"email" json:"email"`
 }
 
 type UserLogin struct {
-	Email    string `db:"email"`
-	Password string `db:"password"`
+	Email    string `db:"email" json:"email"`
+	Password string `db:"password" json:"password"`
 }
 
 type IUserRepository interface {

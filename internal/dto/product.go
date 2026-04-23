@@ -9,10 +9,9 @@ type CreateProductRequest struct {
 }
 
 type UpdateProductRequest struct {
-	ID          int64   `json:"id" binding:"required"`
-	Name        string  `json:"name" binding:"required"`
-	Description string  `json:"description" binding:"required"`
-	SKU         string  `json:"sku" binding:"required"`
-	Price       float64 `json:"price" binding:"required,gt=0"`
-	Stock       int     `json:"stock" binding:"required,gte=0"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	SKU         string  `json:"sku"`
+	Price       float64 `json:"price"`
+	Stock       int     `json:"stock"`
 }

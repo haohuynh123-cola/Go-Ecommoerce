@@ -3,13 +3,15 @@ package domain
 import "errors"
 
 var (
-	ErrUnauthorized           = errors.New("unauthorized")
-	ErrForbidden              = errors.New("forbidden")
-	ErrEmailAlreadyExists     = errors.New("email already exists")
-	ErrInvalidCredentials     = errors.New("invalid credentials")
-	ErrUserNotFound           = errors.New("user not found")
-	ErrTokenInvalid           = errors.New("invalid token")
-	ErrSKUAlreadyExists       = errors.New("SKU already exists")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrForbidden          = errors.New("forbidden")
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrTokenInvalid       = errors.New("invalid token")
+	ErrSKUAlreadyExists   = errors.New("SKU already exists")
+	ErrProductNotFound    = errors.New("product not found")
+
 	ErrCodeInternal           = "internal_error"
 	ErrCodeUnauthorized       = "unauthorized"
 	ErrCodeEmailAlreadyExists = "email_already_exists"
@@ -17,4 +19,5 @@ var (
 	ErrCodeNotFound           = "not_found"
 	ErrCodeInvalidRequest     = "invalid_request"
 	ErrCodeSKUAlreadyExists   = "sku_already_exists"
+	ErrCodeProductNotFound    = "product_not_found"
 )
