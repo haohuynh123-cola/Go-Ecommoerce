@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
 }
 
 type DatabaseConfig struct {
@@ -14,6 +15,10 @@ type DatabaseConfig struct {
 	DBUser     string `mapstructure:"user"`
 	DBPassword string `mapstructure:"password"`
 	DBName     string `mapstructure:"database_name"`
+}
+
+type JWTConfig struct {
+	SecretKey string `mapstructure:"secret_key"`
 }
 
 func LoadConfig() (*Config, error) {

@@ -17,18 +17,18 @@ func NewUserRepository(db *sqlx.DB) domain.IUserRepository {
 	}
 }
 
-func (u UserRepository) FindUserByEmail(email string) (bool, error) {
-	var count int64
+func (u UserRepository) FindUserByEmail(email string) (*domain.User, error) {
+	var user domain.User
 
-	err := u.db.Get(&count, "SELECT id FROM users Where email = ? LIMIT 1", email)
+	err := u.db.Get(&user, "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, nil
+			return nil, nil
 		}
-		return false, err
+		return nil, err
 	}
 
-	return true, nil
+	return &user, nil
 }
 
 func (u UserRepository) CreateUser(user *domain.User) (*domain.User, error) {
@@ -53,4 +53,18 @@ func (u UserRepository) CreateUser(user *domain.User) (*domain.User, error) {
 	user.ID = id
 
 	return user, nil
+}
+
+func (u UserRepository) FindUserByID(id int64) (*domain.MeResult, error) {
+	var user domain.MeResult
+
+	err := u.db.Get(&user, "SELECT id, name, email FROM users WHERE id = ? LIMIT 1", id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }

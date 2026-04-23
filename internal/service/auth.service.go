@@ -4,22 +4,50 @@ import (
 	"haohuynh123-cola/ecommce/internal/crypto"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthService struct {
-	repo domain.IUserRepository
+	repo      domain.IUserRepository
+	secretKey string
 }
 
-func NewAuthService(repository domain.IUserRepository) domain.IAuthService {
+func NewAuthService(repository domain.IUserRepository, secretKey string) domain.IAuthService {
 	return &AuthService{
-		repo: repository,
+		repo:      repository,
+		secretKey: secretKey,
 	}
 }
 
-func (as *AuthService) Login(req dto.RequestLogin) error {
+func (as *AuthService) Login(req dto.RequestLogin) (*dto.ResponseLogin, error) {
+	//Find user by email
+	user, err := as.repo.FindUserByEmail(req.Email)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	if user == nil {
+		return nil, domain.ErrInvalidCredentials
+	}
+	//Compare password
+	err = crypto.CheckPasswordHash(req.Password, user.Password)
+	if err != nil {
+		return nil, domain.ErrInvalidCredentials
+	}
 
+	//generate token
+	token, err := crypto.GenerateTokenJWT(as.secretKey, user.ID, user.Name, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ResponseLogin{
+		ID:    user.ID,
+		Email: user.Email,
+		Name:  user.Name,
+		Token: token,
+	}, nil
 }
 
 func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister, error) {
@@ -29,7 +57,7 @@ func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister,
 		return nil, err
 	}
 	//If email exist return error
-	if emailExist != false {
+	if emailExist != nil {
 		return nil, domain.ErrEmailAlreadyExists
 	}
 	//Hash password
@@ -54,5 +82,24 @@ func (as *AuthService) Register(req dto.RequestRegister) (*dto.ResponseRegister,
 		ID:    createdUser.ID,
 		Email: createdUser.Email,
 		Name:  createdUser.Name,
+	}, nil
+}
+
+func (as *AuthService) GetMe(c *gin.Context) (*dto.ResponseMe, error) {
+	//Get user from context
+	userId, exists := c.Get("user_id")
+	if !exists {
+		return nil, domain.ErrTokenInvalid
+	}
+
+	user, err := as.repo.FindUserByID(userId.(int64))
+	if err != nil {
+		return nil, domain.ErrTokenInvalid
+	}
+
+	return &dto.ResponseMe{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
 	}, nil
 }

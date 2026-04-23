@@ -25,8 +25,8 @@ func main() {
 
 	// Register authentication routes
 	userRepo := repo.NewUserRepository(db)
-	authService := service.NewAuthService(userRepo)
-	authHandler := handler.NewAuthHandler(authService)
+	authService := service.NewAuthService(userRepo, cfg.JWT.SecretKey)
+	authHandler := handler.NewAuthHandler(authService, cfg.JWT)
 	authHandler.RegisterRoutes(r)
 
 	// Start server on port 8080 (default)

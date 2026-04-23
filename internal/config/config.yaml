@@ -8,3 +8,6 @@ database:
       user: sunny
       password: "123456"
       database_name: ecommerce
+
+jtw:
+      secret_key: "haohuynh19123131312312312"

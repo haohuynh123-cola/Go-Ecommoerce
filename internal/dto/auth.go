@@ -12,7 +12,20 @@ type RequestRegister struct {
 }
 
 type ResponseRegister struct {
-	ID    int64  `json:"id`
+	ID    int64  `json:"id"`
 	Name  string `json:"name"`
-	Email string `json:"Email"`
+	Email string `json:"email"`
+}
+
+type ResponseLogin struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Token string `json:"token"`
+}
+
+type ResponseMe struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }

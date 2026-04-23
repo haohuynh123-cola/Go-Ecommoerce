@@ -1,5 +1,6 @@
 @SERVER=http://localhost:8080/api/v1
-
+//Token triggered after login, copy and paste here for testing protected routes
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzcwMDA3NTMsImdtYWlsIjoiaHV5bmhraW5oYW9AZ21pYWwuY29tIiwibmFtZSI6Ikh14buzbmggS8OtbiBIw6BvIiwidXNlcl9pZCI6MX0.rZmTITYaOqCwgM0Xfhc6LGScZr8kQix4pEy8hwHhp5Y
 # Test user registration
 POST {{SERVER}}/auth/register
 Content-Type: application/json
@@ -13,7 +14,15 @@ Content-Type: application/json
 ###
 # Test user login
 POST {{SERVER}}/auth/login
+Content-Type: application/json
 
+{
+  "email": "huynhkinhao@gmial.com",
+  "password": "123456"
+}
 ###
 # Test user logout
 GET {{SERVER}}/auth/me
+Content-Type: application/json
+Authorization: {{token}}
+

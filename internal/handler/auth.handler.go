@@ -3,8 +3,10 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
+	"haohuynh123-cola/ecommce/internal/middleware"
 	"log"
 	"net/http"
 
@@ -14,12 +16,14 @@ import (
 type AuthHandler struct {
 	// You can add fields here if needed, such as a reference to a service layer
 	service domain.IAuthService
+	cfg     config.JWTConfig
 }
 
 // NewAuthHandler creates a new instance of AuthHandler
-func NewAuthHandler(authService domain.IAuthService) *AuthHandler {
+func NewAuthHandler(authService domain.IAuthService, cfg config.JWTConfig) *AuthHandler {
 	return &AuthHandler{
 		service: authService,
+		cfg:     cfg,
 	}
 }
 
@@ -27,7 +31,10 @@ func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
 	authGroup := r.Group("api/v1/auth")
 	authGroup.POST("/login", h.Login)
 	authGroup.POST("/register", h.Register)
-	authGroup.GET("/me", h.Me)
+
+	auth := r.Group("api/v1/auth")
+	auth.Use(middleware.AuthMiddleware(&h.cfg))
+	auth.GET("/me", h.Me)
 
 }
 
@@ -40,9 +47,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(400, gin.H{"error ": err.Error()})
 		return
 	}
-	// Implement login logic here
+
+	user, err := h.service.Login(req)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidCredentials) {
+			c.JSON(401, gin.H{"error": "invalid credentials"})
+			return
+		}
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
+		"user":    user,
 	})
 }
 
@@ -81,7 +99,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // Me handles requests to get the current user's information
 func (h *AuthHandler) Me(c *gin.Context) {
 	// Implement logic to return current user's information here
+	user, err := h.service.GetMe(c)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"message": "internal server error",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User information",
+		"user":    user,
 	})
 }
