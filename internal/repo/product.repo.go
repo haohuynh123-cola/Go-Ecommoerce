@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/helper"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -19,14 +20,36 @@ func NewProductRepository(db *sqlx.DB) domain.IProductRepository {
 	}
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context, page, pageSize int) ([]*domain.Product, error) {
-	offset := helper.GetOffset(page, pageSize)
-	limit := helper.GetLimit(pageSize)
+func (r *ProductRepository) ListProducts(ctx context.Context, filter domain.ProductFilter) ([]*domain.Product, error) {
+	var (
+		conditions []string
+		args       []any
+	)
 
-	query := `SELECT id, name, description, sku, price, stock FROM products LIMIT ? OFFSET ?`
+	if filter.Name != "" {
+		conditions = append(conditions, "name LIKE ?")
+		args = append(args, "%"+filter.Name+"%")
+	}
+	if filter.SKU != "" {
+		conditions = append(conditions, "sku = ?")
+		args = append(args, filter.SKU)
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + helper.JoinConditions(conditions, " AND ")
+	}
+
+	offset := helper.GetOffset(filter.Page, filter.PageSize)
+	limit := helper.GetLimit(filter.PageSize)
+
+	query := `SELECT id, name, description, sku, price, stock FROM products ` + whereClause + ` LIMIT ? OFFSET ?`
+
 	var products = make([]*domain.Product, 0)
-	err := r.db.SelectContext(ctx, &products, query, limit, offset)
+	err := r.db.SelectContext(ctx, &products, query, append(args, limit, offset)...)
+
 	if err != nil {
+		log.Printf("query failed: %v", err)
 		return nil, err
 	}
 	return products, nil

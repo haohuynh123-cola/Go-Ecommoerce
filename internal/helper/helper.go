@@ -13,3 +13,14 @@ func GetLimit(pageSize int) int {
 	}
 	return pageSize
 }
+
+func JoinConditions(conditions []string, separator string) string {
+	result := ""
+	for i, condition := range conditions {
+		if i > 0 {
+			result += separator
+		}
+		result += condition
+	}
+	return result
+}

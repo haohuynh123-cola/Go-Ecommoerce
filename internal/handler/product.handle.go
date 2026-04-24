@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bytedance/gopkg/util/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,15 +30,20 @@ func (h *ProductHandler) RegisterRoutes(r *gin.Engine) {
 
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	// Implement logic to get all products
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	products, totalItems, err := h.productService.ListProducts(c.Request.Context(), page, pageSize)
+	var req dto.ListingProductFilter
+
+	if err := c.ShouldBindQuery(&req); err != nil {
+		logger.Errorf("failed to bind query parameters: %v", err)
+		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "invalid query parameters"))
+		return
+	}
+	products, totalItems, err := h.productService.ListProducts(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeNotFound, "failed to get products"))
 		return
 	}
 
-	c.JSON(http.StatusOK, pkg.PaginatedSuccessResponse(products, page, pageSize, totalItems))
+	c.JSON(http.StatusOK, pkg.PaginatedSuccessResponse(products, req.Page, req.PageSize, totalItems))
 }
 
 func (h *ProductHandler) GetProductByID(c *gin.Context) {

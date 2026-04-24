@@ -14,12 +14,19 @@ type Product struct {
 	Stock       int     `db:"stock" json:"stock"`
 }
 
+type ProductFilter struct {
+	Name     string
+	SKU      string
+	Page     int
+	PageSize int
+}
+
 type IProductService interface {
 	CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
-	ListProducts(ctx context.Context, page, pageSize int) ([]*Product, int64, error)
+	ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*Product, int64, error)
 }
 
 type IProductRepository interface {
@@ -27,7 +34,7 @@ type IProductRepository interface {
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
-	ListProducts(ctx context.Context, page, pageSize int) ([]*Product, error)
+	ListProducts(ctx context.Context, req ProductFilter) ([]*Product, error)
 	GetProductBySKU(ctx context.Context, sku string) (*Product, error)
 	GetTotalProducts(ctx context.Context) (int64, error)
 }

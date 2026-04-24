@@ -1,5 +1,11 @@
 package dto
 
+type ListingProductFilter struct {
+	Name     string `form:"name"`
+	SKU      string `form:"sku"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"page_size"`
+}
 type CreateProductRequest struct {
 	Name        string  `json:"name" binding:"required"`
 	Description string  `json:"description" binding:"required"`

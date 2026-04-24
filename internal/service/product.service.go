@@ -16,9 +16,16 @@ func NewProductService(repo domain.IProductRepository) domain.IProductService {
 	}
 }
 
-func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*domain.Product, int64, error) {
+func (s *ProductService) ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*domain.Product, int64, error) {
 	// Implement logic to list all products
-	products, err := s.repo.ListProducts(ctx, page, pageSize)
+	filter := domain.ProductFilter{
+		Name:     req.Name,
+		SKU:      req.SKU,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+
+	products, err := s.repo.ListProducts(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
