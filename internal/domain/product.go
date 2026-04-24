@@ -21,7 +21,7 @@ type ProductFilter struct {
 	PageSize int
 }
 
-type IProductService interface {
+type ProductService interface {
 	CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
@@ -29,7 +29,7 @@ type IProductService interface {
 	ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*Product, int64, error)
 }
 
-type IProductRepository interface {
+type ProductRepository interface {
 	CreateProduct(ctx context.Context, product *Product) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
@@ -37,4 +37,9 @@ type IProductRepository interface {
 	ListProducts(ctx context.Context, req ProductFilter) ([]*Product, error)
 	GetProductBySKU(ctx context.Context, sku string) (*Product, error)
 	GetTotalProducts(ctx context.Context) (int64, error)
+}
+
+type ProductCache interface {
+	SetList(ctx context.Context, key string, products []*Product, totalItems int64) error
+	GetList(ctx context.Context, key string) ([]*Product, int64, bool, error)
 }

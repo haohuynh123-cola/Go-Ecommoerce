@@ -7,6 +7,7 @@ import (
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
+	Redis    RedisConfig    `mapstructure:"redis"`
 }
 
 type DatabaseConfig struct {
@@ -15,6 +16,13 @@ type DatabaseConfig struct {
 	DBUser     string `mapstructure:"user"`
 	DBPassword string `mapstructure:"password"`
 	DBName     string `mapstructure:"database_name"`
+}
+
+type RedisConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 type JWTConfig struct {

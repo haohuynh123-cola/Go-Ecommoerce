@@ -2,27 +2,42 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 )
 
 type ProductService struct {
-	repo domain.IProductRepository
+	repo  domain.ProductRepository
+	cache *cache.ProductCache
 }
 
-func NewProductService(repo domain.IProductRepository) domain.IProductService {
+func NewProductService(repo domain.ProductRepository, cache *cache.ProductCache) domain.ProductService {
 	return &ProductService{
-		repo: repo,
+		repo:  repo,
+		cache: cache,
 	}
 }
 
+func productListKey(f dto.ListingProductFilter) string {
+	return fmt.Sprintf("products:list:name=%s:sku=%s:page=%d:page_size=%d", f.Name, f.SKU, f.Page, f.PageSize)
+}
+
 func (s *ProductService) ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*domain.Product, int64, error) {
+	key := productListKey(req)
+
 	// Implement logic to list all products
 	filter := domain.ProductFilter{
 		Name:     req.Name,
 		SKU:      req.SKU,
 		Page:     req.Page,
 		PageSize: req.PageSize,
+	}
+
+	//Get from cache first
+	if items, total, hit, _ := s.cache.GetList(ctx, key); hit {
+		return items, total, nil
 	}
 
 	products, err := s.repo.ListProducts(ctx, filter)
@@ -33,6 +48,9 @@ func (s *ProductService) ListProducts(ctx context.Context, req dto.ListingProduc
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// Set to cache
+	_ = s.cache.SetList(ctx, key, products, totalItems)
 	return products, totalItems, nil
 }
 

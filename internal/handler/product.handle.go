@@ -12,10 +12,10 @@ import (
 )
 
 type ProductHandler struct {
-	productService domain.IProductService
+	productService domain.ProductService
 }
 
-func NewProductHandler(productService domain.IProductService) *ProductHandler {
+func NewProductHandler(productService domain.ProductService) *ProductHandler {
 	return &ProductHandler{productService: productService}
 }
 

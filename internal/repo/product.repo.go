@@ -14,7 +14,7 @@ type ProductRepository struct {
 	db *sqlx.DB
 }
 
-func NewProductRepository(db *sqlx.DB) domain.IProductRepository {
+func NewProductRepository(db *sqlx.DB) domain.ProductRepository {
 	return &ProductRepository{
 		db: db,
 	}

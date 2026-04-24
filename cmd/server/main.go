@@ -1,11 +1,14 @@
 package main
 
 import (
+	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/handler"
+	"haohuynh123-cola/ecommce/internal/initialize"
 	"haohuynh123-cola/ecommce/internal/repo"
 	"haohuynh123-cola/ecommce/internal/service"
 	"log"
+	"time"
 )
 
 func main() {
@@ -14,12 +17,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := config.InitDatabase(&cfg.Database)
+	db, err := initialize.InitDatabase(&cfg.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer db.Close()
+
+	redisClient, err := initialize.InitRedis(&cfg.Redis)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer redisClient.Close()
 
 	r := handler.SetupRouter() // Initialize routes
 
@@ -31,7 +40,8 @@ func main() {
 
 	// Register product routes
 	productRepo := repo.NewProductRepository(db)
-	productService := service.NewProductService(productRepo)
+	productCache := cache.NewProductCache(redisClient, 5*time.Minute)
+	productService := service.NewProductService(productRepo, productCache)
 	productHandler := handler.NewProductHandler(productService)
 	productHandler.RegisterRoutes(r)
 

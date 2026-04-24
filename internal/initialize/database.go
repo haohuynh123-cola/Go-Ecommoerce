@@ -1,13 +1,14 @@
-package config
+package initialize
 
 import (
 	"fmt"
+	"haohuynh123-cola/ecommce/internal/config"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
-func InitDatabase(cfg *DatabaseConfig) (*sqlx.DB, error) {
+func InitDatabase(cfg *config.DatabaseConfig) (*sqlx.DB, error) {
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		cfg.DBUser,
