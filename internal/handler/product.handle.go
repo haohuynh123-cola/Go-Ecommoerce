@@ -29,13 +29,15 @@ func (h *ProductHandler) RegisterRoutes(r *gin.Engine) {
 
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	// Implement logic to get all products
-	products, err := h.productService.ListProducts(c.Request.Context())
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	products, totalItems, err := h.productService.ListProducts(c.Request.Context(), page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeNotFound, "failed to get products"))
 		return
 	}
 
-	c.JSON(http.StatusOK, pkg.SuccessResponse(products))
+	c.JSON(http.StatusOK, pkg.PaginatedSuccessResponse(products, page, pageSize, totalItems))
 }
 
 func (h *ProductHandler) GetProductByID(c *gin.Context) {

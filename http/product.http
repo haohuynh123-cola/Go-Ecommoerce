@@ -2,7 +2,7 @@
 //Token triggered after login, copy and paste here for testing protected routes
 
 # Get list of products
-GET {{SERVER}}/products
+GET {{SERVER}}/products?page=3&page_size=1
 
 ###
 #Create a new product (requires authentication)

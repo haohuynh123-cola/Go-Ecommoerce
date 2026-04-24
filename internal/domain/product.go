@@ -19,7 +19,7 @@ type IProductService interface {
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
-	ListProducts(ctx context.Context) ([]*Product, error)
+	ListProducts(ctx context.Context, page, pageSize int) ([]*Product, int64, error)
 }
 
 type IProductRepository interface {
@@ -27,6 +27,7 @@ type IProductRepository interface {
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
-	ListProducts(ctx context.Context) ([]*Product, error)
+	ListProducts(ctx context.Context, page, pageSize int) ([]*Product, error)
 	GetProductBySKU(ctx context.Context, sku string) (*Product, error)
+	GetTotalProducts(ctx context.Context) (int64, error)
 }

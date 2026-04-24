@@ -9,18 +9,34 @@ import (
 )
 
 type Response struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-	Code    string      `json:"code,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
+	Code    string `json:"code,omitempty"`
+	Errors  any    `json:"errors,omitempty"`
 }
 
-func SuccessResponse(data interface{}) Response {
+func SuccessResponse(data any) Response {
 	return Response{
 		Status: "success",
 		Data:   data,
 	}
+}
+
+type PaginatedResponse struct {
+	Status     string          `json:"status"`
+	Message    string          `json:"message,omitempty"`
+	Data       any             `json:"data,omitempty"`
+	Code       string          `json:"code,omitempty"`
+	Errors     any             `json:"errors,omitempty"`
+	Pagination *PaginationMeta `json:"pagination,omitempty"`
+}
+
+type PaginationMeta struct {
+	Page       int   `json:"page"`
+	PageSize   int   `json:"page_size"`
+	TotalItems int64 `json:"total_items"`
+	TotalPages int   `json:"total_pages"`
 }
 
 func ErrorResponse(code string, message string) Response {
@@ -60,4 +76,18 @@ func msgForTag(tag string) string {
 		return "value is too long"
 	}
 	return "invalid value"
+}
+
+func PaginatedSuccessResponse(data any, page, pageSize int, totalItems int64) PaginatedResponse {
+	totalPages := int((totalItems + int64(pageSize) - 1) / int64(pageSize))
+	return PaginatedResponse{
+		Status: "success",
+		Data:   data,
+		Pagination: &PaginationMeta{
+			Page:       page,
+			PageSize:   pageSize,
+			TotalItems: totalItems,
+			TotalPages: totalPages,
+		},
+	}
 }

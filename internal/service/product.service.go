@@ -16,13 +16,17 @@ func NewProductService(repo domain.IProductRepository) domain.IProductService {
 	}
 }
 
-func (s *ProductService) ListProducts(ctx context.Context) ([]*domain.Product, error) {
+func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*domain.Product, int64, error) {
 	// Implement logic to list all products
-	products, err := s.repo.ListProducts(ctx)
+	products, err := s.repo.ListProducts(ctx, page, pageSize)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return products, nil
+	totalItems, err := s.repo.GetTotalProducts(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return products, totalItems, nil
 }
 
 func (s *ProductService) GetProductByID(ctx context.Context, id int64) (*domain.Product, error) {

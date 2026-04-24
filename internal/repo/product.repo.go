@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
+	"haohuynh123-cola/ecommce/internal/helper"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -18,10 +19,13 @@ func NewProductRepository(db *sqlx.DB) domain.IProductRepository {
 	}
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context) ([]*domain.Product, error) {
-	query := `SELECT id, name, description, sku, price, stock FROM products`
+func (r *ProductRepository) ListProducts(ctx context.Context, page, pageSize int) ([]*domain.Product, error) {
+	offset := helper.GetOffset(page, pageSize)
+	limit := helper.GetLimit(pageSize)
+
+	query := `SELECT id, name, description, sku, price, stock FROM products LIMIT ? OFFSET ?`
 	var products = make([]*domain.Product, 0)
-	err := r.db.SelectContext(ctx, &products, query)
+	err := r.db.SelectContext(ctx, &products, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -116,4 +120,15 @@ func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (*d
 		return nil, err
 	}
 	return &product, nil
+}
+
+func (r *ProductRepository) GetTotalProducts(ctx context.Context) (int64, error) {
+	// Implement logic to get total number of products from the database
+	query := `SELECT COUNT(*) FROM products`
+	var count int64
+	err := r.db.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
