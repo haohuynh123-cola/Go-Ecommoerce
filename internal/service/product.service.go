@@ -20,11 +20,11 @@ func NewProductService(repo domain.ProductRepository, cache *cache.ProductCache)
 	}
 }
 
-func productListKey(f dto.ListingProductFilter) string {
+func productListKey(f dto.ProductFilter) string {
 	return fmt.Sprintf("products:list:name=%s:sku=%s:page=%d:page_size=%d", f.Name, f.SKU, f.Page, f.PageSize)
 }
 
-func (s *ProductService) ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*domain.Product, int64, error) {
+func (s *ProductService) ListProducts(ctx context.Context, req dto.ProductFilter) ([]*domain.Product, int64, error) {
 	key := productListKey(req)
 
 	// Implement logic to list all products

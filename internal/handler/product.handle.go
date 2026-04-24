@@ -28,15 +28,30 @@ func (h *ProductHandler) RegisterRoutes(r *gin.Engine) {
 	productGroup.DELETE("/:id", h.DeleteProduct)
 }
 
+// GetProducts handles requests to retrieve a list of products
+// @Summary      List products
+// @Description  Retrieve a paginated list of products with optional filtering by name and SKU
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        name      query     string  false  "Filter by product name"
+// @Param        sku       query     string  false  "Filter by product SKU"
+// @Param        page      query     int     false  "Page number (default: 1)"
+// @Param        page_size query     int     false  "Number of items per page (default: 10)"
+// @Success      200       {object}  pkg.PaginatedSuccessResponseSwag
+// @Failure      400       {object}  pkg.ErrorResponseSwag
+// @Failure      500       {object}  pkg.ErrorResponseSwag
+// @Router       /products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	// Implement logic to get all products
-	var req dto.ListingProductFilter
+	var req dto.ProductFilter
 
 	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Errorf("failed to bind query parameters: %v", err)
 		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "invalid query parameters"))
 		return
 	}
+
 	products, totalItems, err := h.productService.ListProducts(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeNotFound, "failed to get products"))

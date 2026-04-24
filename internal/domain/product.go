@@ -26,7 +26,7 @@ type ProductService interface {
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
-	ListProducts(ctx context.Context, req dto.ListingProductFilter) ([]*Product, int64, error)
+	ListProducts(ctx context.Context, req dto.ProductFilter) ([]*Product, int64, error)
 }
 
 type ProductRepository interface {

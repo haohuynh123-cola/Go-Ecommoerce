@@ -5,12 +5,30 @@ import (
 	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/handler"
 	"haohuynh123-cola/ecommce/internal/initialize"
+	"haohuynh123-cola/ecommce/internal/middleware"
 	"haohuynh123-cola/ecommce/internal/repo"
 	"haohuynh123-cola/ecommce/internal/service"
 	"log"
 	"time"
+
+	_ "haohuynh123-cola/ecommce/internal/docs"
 )
 
+// @title           E-commerce API
+// @version         1.0
+// @description     API cho hệ thống e-commerce
+// @termsOfService  http://example.com/terms/
+
+// @contact.name   API Support
+// @contact.email  support@example.com
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                Type "Bearer" followed by a space and JWT token.
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -31,6 +49,9 @@ func main() {
 	defer redisClient.Close()
 
 	r := handler.SetupRouter() // Initialize routes
+	//use rate limiter middleware for all routes,  1 minute 100 requests per minute
+	globalLimit := middleware.NewRateLimiter(redisClient, 100, time.Minute)
+	r.Use(globalLimit.Middleware("global"))
 
 	// Register authentication routes
 	userRepo := repo.NewUserRepository(db)

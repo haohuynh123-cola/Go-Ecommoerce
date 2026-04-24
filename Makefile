@@ -16,4 +16,7 @@ migrate-down:
 build:
 	docker compose build .
 
-.PHONY: run migrate-up migrate-down setup build
+swag:
+	swag init -g cmd/server/main.go  --parseInternal  -o internal/docs
+
+.PHONY: run migrate-up migrate-down setup build swag

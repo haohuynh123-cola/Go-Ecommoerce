@@ -16,13 +16,6 @@ type Response struct {
 	Errors  any    `json:"errors,omitempty"`
 }
 
-func SuccessResponse(data any) Response {
-	return Response{
-		Status: "success",
-		Data:   data,
-	}
-}
-
 type PaginatedResponse struct {
 	Status     string          `json:"status"`
 	Message    string          `json:"message,omitempty"`
@@ -30,6 +23,25 @@ type PaginatedResponse struct {
 	Code       string          `json:"code,omitempty"`
 	Errors     any             `json:"errors,omitempty"`
 	Pagination *PaginationMeta `json:"pagination,omitempty"`
+}
+
+func SuccessResponse(data any) Response {
+	return Response{
+		Status: "success",
+		Data:   data,
+	}
+}
+
+type ErrorResponseSwag struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Code    string `json:"code,omitempty"`
+}
+
+type PaginatedSuccessResponseSwag struct {
+	Status     string          `json:"status"`
+	Data       any             `json:"data"`
+	Pagination *PaginationMeta `json:"pagination"`
 }
 
 type PaginationMeta struct {

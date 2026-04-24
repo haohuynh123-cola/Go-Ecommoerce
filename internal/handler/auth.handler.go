@@ -42,6 +42,17 @@ func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
 }
 
 // Login handles user login requests
+// @Summary      Log in a user
+// @Description  Authenticate a user and return a JWT token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        loginRequest  body      dto.RequestLogin  true  "Login request"
+// @Success      200  {object}  dto.ResponseLogin
+// @Failure      400  {object}  pkg.ErrorResponseSwag
+// @Failure      404  {object}  pkg.ErrorResponseSwag
+// @Failure      500  {object}  pkg.ErrorResponseSwag
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -68,6 +79,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Register handles user registration requests
+// @Summary      Register a new user
+// @Description  Create a new user account
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        registerRequest  body      dto.RequestRegister  true  "Registration request"
+// @Success      200  {object}  dto.ResponseRegister
+// @Failure      400  {object}  pkg.ErrorResponseSwag
+// @Failure      409  {object}  pkg.ErrorResponseSwag
+// @Failure      500  {object}  pkg.ErrorResponseSwag
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RequestRegister
 
@@ -96,6 +118,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Me handles requests to get the current user's information
+// @Summary      Get current user info
+// @Description  Retrieve information about the currently authenticated user
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @security     BearerAuth
+// @Success      200  {object}  dto.ResponseMe
+// @Failure      401  {object}  pkg.ErrorResponseSwag
+// @Failure      500  {object}  pkg.ErrorResponseSwag
+// @Router       /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -113,5 +145,4 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pkg.SuccessResponse(user))
-
 }
