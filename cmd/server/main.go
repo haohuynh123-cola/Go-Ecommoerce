@@ -66,6 +66,13 @@ func main() {
 	productHandler := handler.NewProductHandler(productService)
 	productHandler.RegisterRoutes(r)
 
+	//Register Cart routes
+	cartRepo := repo.NewCartRepository(db)
+	cartCache := cache.NewCartCache(redisClient, 30*time.Minute)
+	cartService := service.NewCartService(cartRepo, cartCache)
+	cartHandler := handler.NewCartHandler(cartService, cfg.JWT)
+	cartHandler.RegisterRoutes(r)
+
 	// Start server on port 8080 (default)
 	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)
 	if err := r.Run(); err != nil {

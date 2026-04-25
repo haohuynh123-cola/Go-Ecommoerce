@@ -4,6 +4,9 @@ GOOSE = goose -dir migrations mysql "sunny:123456@tcp(localhost:3306)/ecommerce"
 run:
 	go run $(ROOT)
 
+dev:
+	docker compose up -d
+
 setup:
 	go mod tidy
 
@@ -15,6 +18,7 @@ migrate-down:
 
 build:
 	docker compose build .
+
 
 swag:
 	swag init -g cmd/server/main.go  --parseInternal  -o internal/docs

@@ -5,7 +5,6 @@ import (
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"haohuynh123-cola/ecommce/internal/middleware"
-	"haohuynh123-cola/ecommce/internal/service"
 	"haohuynh123-cola/ecommce/pkg"
 	"net/http"
 
@@ -14,12 +13,12 @@ import (
 
 type CartHandler struct {
 	// You can add dependencies here, such as services or repositories
-	service service.CartService
+	service domain.CartService
 	cfg     config.JWTConfig
 }
 
 // NewCartHandler creates a new instance of CartHandler
-func NewCartHandler(service service.CartService, cfg config.JWTConfig) *CartHandler {
+func NewCartHandler(service domain.CartService, cfg config.JWTConfig) *CartHandler {
 	return &CartHandler{
 		service: service,
 		cfg:     cfg,
@@ -62,6 +61,19 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 
 func (h *CartHandler) GetCartItems(c *gin.Context) {
 	// Implement logic to get cart items for a user
+	userID := c.GetInt64("user_id")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, pkg.ErrorResponse(domain.ErrCodeUnauthorized, "unauthorized"))
+		return
+	}
+
+	items, err := h.service.GetCartItems(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to get cart items"))
+		return
+	}
+
+	c.JSON(http.StatusOK, pkg.SuccessResponse(items))
 }
 
 func (h *CartHandler) RemoveFromCart(c *gin.Context) {

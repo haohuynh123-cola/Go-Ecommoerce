@@ -6,10 +6,11 @@ import (
 )
 
 type Cart struct {
-	ID        int64 `db:"id" json:"id"`
-	UserID    int64 `db:"user_id" json:"user_id"`
-	ProductID int64 `db:"product_id" json:"product_id"`
-	Quantity  int   `db:"quantity" json:"quantity"`
+	ID        int64    `db:"id" json:"id"`
+	UserID    int64    `db:"user_id" json:"user_id"`
+	ProductID int64    `db:"product_id" json:"product_id"`
+	Quantity  int      `db:"quantity" json:"quantity"`
+	Product   *Product `json:"product,omitempty"`
 }
 
 type CartItem struct {

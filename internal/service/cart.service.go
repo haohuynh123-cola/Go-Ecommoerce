@@ -2,20 +2,23 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
-	"haohuynh123-cola/ecommce/internal/repo"
 )
 
 type CartService struct {
 	// You can add dependencies here, such as repositories
-	repo repo.CartRepository
+	repo domain.CartRepository
+	rdb  *cache.CartCache
 }
 
 // NewCartService creates a new instance of CartService
-func NewCartService(repo repo.CartRepository) domain.CartService {
+func NewCartService(repo domain.CartRepository, rdb *cache.CartCache) domain.CartService {
 	return &CartService{
 		repo: repo,
+		rdb:  rdb,
 	}
 }
 
@@ -31,9 +34,25 @@ func (s *CartService) AddToCart(ctx context.Context, cart *dto.AddToCartRequest)
 	return s.repo.AddToCart(ctx, cartItem)
 }
 
+func keyCache(userID int64) string {
+	return fmt.Sprintf("cart:user:%d", userID)
+}
+
 func (s *CartService) GetCartItems(ctx context.Context, userID int64) ([]*domain.CartItem, error) {
+	//Get from cache first
+	key := keyCache(userID)
+	if items, hit, _ := s.rdb.GetCartItems(ctx, key); hit {
+		return items, nil
+	}
 	// Implement logic to get cart items for a user
-	return s.repo.GetCartItems(ctx, userID)
+	items, err := s.repo.GetCartItems(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	// Set the items in cache
+	_ = s.rdb.SetCartItems(ctx, key, items)
+
+	return items, nil
 }
 
 func (s *CartService) RemoveFromCart(ctx context.Context, userID int64, productID int64) error {

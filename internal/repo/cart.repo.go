@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"haohuynh123-cola/ecommce/internal/domain"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -25,7 +26,11 @@ func (r *CartRepository) AddToCart(ctx context.Context, cart *domain.Cart) error
 }
 
 func (r *CartRepository) GetCartItems(ctx context.Context, userID int64) ([]*domain.CartItem, error) {
-	query := `SELECT id, user_id, product_id, quantity, created_at, updated_at FROM carts WHERE user_id = ?`
+	query := `SELECT c.id, c.user_id, c.product_id, c.quantity, p.id, p.name, p.description, p.sku, p.price, p.stock
+				FROM carts c
+				JOIN products p  ON c.product_id = p.id
+				WHERE c.user_id = ?
+			`
 	rows, err := r.DB.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -35,12 +40,15 @@ func (r *CartRepository) GetCartItems(ctx context.Context, userID int64) ([]*dom
 	var cartItems []*domain.CartItem
 	for rows.Next() {
 		var cart domain.Cart
-		i := rows.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.Quantity)
+		cart.Product = &domain.Product{}
+		// Scan the cart item details along with product details
+		i := rows.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.Quantity, &cart.Product.ID, &cart.Product.Name, &cart.Product.Description, &cart.Product.SKU, &cart.Product.Price, &cart.Product.Stock)
 		if i != nil {
+			log.Fatalf("failed to scan cart item for user %d: %v", userID, i)
 			return nil, i
 		}
 		cartItems = append(cartItems, &domain.CartItem{
-			Product:  &domain.Product{ID: cart.ProductID},
+			Product:  cart.Product, // You can fetch product details from the database if needed
 			Quantity: cart.Quantity,
 		})
 	}
