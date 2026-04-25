@@ -58,6 +58,10 @@ func (s *CartService) GetCartItems(ctx context.Context, userID int64) ([]*domain
 
 func (s *CartService) RemoveFromCart(ctx context.Context, userID int64, productID int64) error {
 	// Implement logic to remove item from cart
+	key := keyCache(userID)
+	// Clear the cache for the user
+	_ = s.rdb.ClearCart(ctx, key)
+
 	return s.repo.RemoveFromCart(ctx, userID, productID)
 }
 
@@ -68,11 +72,20 @@ func (s *CartService) UpdateCartItem(ctx context.Context, cart *dto.UpdateCartIt
 		ProductID: cart.ProductID,
 		Quantity:  cart.Quantity,
 	}
+	key := keyCache(cart.UserID)
+	// Clear the cache for the user
+	items := toCartItems([]*domain.Cart{cartItem})
+	_ = s.rdb.SetCartItems(ctx, key, items)
+
 	return s.repo.UpdateCartItem(ctx, cartItem)
 }
 
 func (s *CartService) ClearCart(ctx context.Context, userID int64) error {
 	// Implement logic to clear cart for a user
+	key := keyCache(userID)
+	// Clear the cache for the user
+	_ = s.rdb.ClearCart(ctx, key)
+
 	return s.repo.ClearCart(ctx, userID)
 }
 
