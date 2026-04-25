@@ -45,10 +45,11 @@ func (s *CartService) GetCartItems(ctx context.Context, userID int64) ([]*domain
 		return items, nil
 	}
 	// Implement logic to get cart items for a user
-	items, err := s.repo.GetCartItems(ctx, userID)
+	carts, err := s.repo.GetCartItems(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+	items := toCartItems(carts)
 	// Set the items in cache
 	_ = s.rdb.SetCartItems(ctx, key, items)
 
@@ -73,4 +74,15 @@ func (s *CartService) UpdateCartItem(ctx context.Context, cart *dto.UpdateCartIt
 func (s *CartService) ClearCart(ctx context.Context, userID int64) error {
 	// Implement logic to clear cart for a user
 	return s.repo.ClearCart(ctx, userID)
+}
+
+func toCartItems(carts []*domain.Cart) []*domain.CartItem {
+	items := make([]*domain.CartItem, 0, len(carts))
+	for _, c := range carts {
+		items = append(items, &domain.CartItem{
+			Product:  c.Product,
+			Quantity: c.Quantity,
+		})
+	}
+	return items
 }

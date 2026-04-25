@@ -14,8 +14,3 @@ Authorization: {{token}}
 GET {{SERVER}}/cart/items
 Content-Type: application/json
 Authorization: {{token}}
-
-{
-  "product_id": 1,
-  "quantity": 2
-}

@@ -28,7 +28,7 @@ type CartService interface {
 
 type CartRepository interface {
 	AddToCart(ctx context.Context, cart *Cart) error
-	GetCartItems(ctx context.Context, userID int64) ([]*CartItem, error)
+	GetCartItems(ctx context.Context, userID int64) ([]*Cart, error)
 	UpdateCartItem(ctx context.Context, cart *Cart) error
 	RemoveFromCart(ctx context.Context, userID, productID int64) error
 	ClearCart(ctx context.Context, userID int64) error
