@@ -1,5 +1,12 @@
 package dto
 
+type Product struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SKU         string `json:"sku"`
+}
+
 type ProductFilter struct {
 	Name     string `form:"name"`
 	SKU      string `form:"sku"`

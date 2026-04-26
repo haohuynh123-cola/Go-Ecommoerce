@@ -1,0 +1,33 @@
+@SERVER=http://localhost:8080/api/v1
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzcyNjM4NjUsImdtYWlsIjoiaHV5bmhraW5oYW9AZ21pYWwuY29tIiwibmFtZSI6Ikh14buzbmggS8OtbiBIw6BvIiwidXNlcl9pZCI6MX0.2yAduz5lx_brkZvl1NzcZ5SvXk8yIm6gY91aBGWsq2I
+
+# Get list of orders
+GET {{SERVER}}/orders
+Content-Type: application/json
+Authorization: {{token}}
+
+###
+# Get order details by ID
+GET {{SERVER}}/orders/1
+Content-Type: application/json
+Authorization: {{token}}
+
+
+### Create a new order (requires authentication)
+POST {{SERVER}}/orders
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "user_id": 1,
+  "items": [
+    {
+      "product_id": 1,
+      "quantity": 2
+    },
+    {
+      "product_id": 2,
+      "quantity": 1
+    }
+  ]
+}

@@ -11,6 +11,7 @@ var (
 	ErrTokenInvalid       = errors.New("invalid token")
 	ErrSKUAlreadyExists   = errors.New("SKU already exists")
 	ErrProductNotFound    = errors.New("product not found")
+	ErrOrderNotFound      = errors.New("order not found")
 
 	ErrCodeInternal           = "internal_error"
 	ErrCodeUnauthorized       = "unauthorized"
