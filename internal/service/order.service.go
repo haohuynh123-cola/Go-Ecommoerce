@@ -4,7 +4,6 @@ import (
 	"context"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
-	"log"
 	"time"
 )
 
@@ -22,7 +21,6 @@ func NewOrderService(repo domain.OrderRepository, productRepo domain.ProductRepo
 
 func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error) {
 	//Get Product details and calculate total amount
-	log.Printf("Creating order for user ID: %d with %d items", req.UserID, len(req.Items))
 	orderItems := make([]domain.OrderItem, len(req.Items))
 	var totalAmount float64
 	for i, item := range req.Items {

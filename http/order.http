@@ -1,5 +1,5 @@
 @SERVER=http://localhost:8080/api/v1
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzcyNjM4NjUsImdtYWlsIjoiaHV5bmhraW5oYW9AZ21pYWwuY29tIiwibmFtZSI6Ikh14buzbmggS8OtbiBIw6BvIiwidXNlcl9pZCI6MX0.2yAduz5lx_brkZvl1NzcZ5SvXk8yIm6gY91aBGWsq2I
+@token=
 
 # Get list of orders
 GET {{SERVER}}/orders
