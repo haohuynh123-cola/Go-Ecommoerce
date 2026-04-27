@@ -97,6 +97,10 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return orders, nil
 }
 
@@ -116,6 +120,12 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID int64) (*dom
 		return nil, err
 	}
 	order.Items = items
+
+	activities, err := loadOrderActivities(ctx, r.db, orderID)
+	if err != nil {
+		return nil, err
+	}
+	order.Activities = activities
 
 	return &order, nil
 }
@@ -168,4 +178,28 @@ func loadProductsInOrder(ctx context.Context, db *sqlx.DB, items []domain.OrderI
 		productMap[products[i].ID] = &products[i]
 	}
 	return productMap, nil
+}
+
+func loadOrderActivities(ctx context.Context, db *sqlx.DB, orderID int64) ([]*domain.OrderActivity, error) {
+	query := `SELECT order_id, description, activity_type, activity_at FROM order_activities WHERE order_id = ? ORDER BY activity_at DESC`
+	rows, err := db.QueryxContext(ctx, query, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var activities []*domain.OrderActivity
+	for rows.Next() {
+		var activity domain.OrderActivity
+		if err := rows.StructScan(&activity); err != nil {
+			return nil, err
+		}
+		activities = append(activities, &activity)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return activities, nil
 }

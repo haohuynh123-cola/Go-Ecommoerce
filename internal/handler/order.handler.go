@@ -29,7 +29,7 @@ func (h *OrderHandler) RegisterOrderRoutes(r *gin.Engine) {
 	orderGroup.Use(middleware.AuthMiddleware(&h.cfg)) // Apply authentication middleware to order routes
 	orderGroup.POST("/", h.CreateOrder)
 	orderGroup.GET("/", h.GetOrdersByUserID)
-	orderGroup.GET("/:id", h.GetOrderByID) // Optional: Get order details by order ID
+	orderGroup.GET("/:id", h.GetOrderByID)
 }
 
 func (h *OrderHandler) CreateOrder(c *gin.Context) {

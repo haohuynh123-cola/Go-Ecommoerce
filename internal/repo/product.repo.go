@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/helper"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -49,7 +48,6 @@ func (r *ProductRepository) ListProducts(ctx context.Context, filter domain.Prod
 	err := r.db.SelectContext(ctx, &products, query, append(args, limit, offset)...)
 
 	if err != nil {
-		log.Printf("query failed: %v", err)
 		return nil, err
 	}
 	return products, nil

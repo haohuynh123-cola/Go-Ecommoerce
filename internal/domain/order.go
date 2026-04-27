@@ -7,12 +7,13 @@ import (
 )
 
 type Order struct {
-	ID          int64       `json:"id,omitempty" db:"id"`
-	UserID      int64       `json:"user_id" db:"user_id"`
-	OrderDate   time.Time   `json:"order_date" db:"order_date"`
-	TotalAmount float64     `json:"total_amount" db:"total_amount"`
-	Status      string      `json:"status" db:"status"`
-	Items       []OrderItem `json:"items" db:"-"`
+	ID          int64            `json:"id,omitempty" db:"id"`
+	UserID      int64            `json:"user_id" db:"user_id"`
+	OrderDate   time.Time        `json:"order_date" db:"order_date"`
+	TotalAmount float64          `json:"total_amount" db:"total_amount"`
+	Status      string           `json:"status" db:"status"`
+	Items       []OrderItem      `json:"items" db:"-"`
+	Activities  []*OrderActivity `json:"activities,omitempty" db:"-"`
 }
 
 type OrderItem struct {
@@ -33,5 +34,6 @@ type OrderRepository interface {
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error)
 	GetOrdersByUserID(ctx context.Context, userID int64) ([]*dto.CreateOrderResponse, error)
-	GetOrderByID(ctx context.Context, orderID int64) (*dto.CreateOrderResponse, error)
+	GetOrderByID(ctx context.Context, orderID int64) (*dto.GetOrderByIDResponse, error)
+	GetActivitiesByOrderID(ctx context.Context, orderID int64) ([]*dto.OrderActivityResponse, error)
 }

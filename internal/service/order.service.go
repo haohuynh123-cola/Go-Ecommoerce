@@ -2,20 +2,23 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"time"
 )
 
 type OrderService struct {
-	repo        domain.OrderRepository
-	productRepo domain.ProductRepository
+	repo         domain.OrderRepository
+	productRepo  domain.ProductRepository
+	activityRepo domain.OrderActivityRepository
 }
 
-func NewOrderService(repo domain.OrderRepository, productRepo domain.ProductRepository) domain.OrderService {
+func NewOrderService(repo domain.OrderRepository, productRepo domain.ProductRepository, activityRepo domain.OrderActivityRepository) domain.OrderService {
 	return &OrderService{
-		repo:        repo,
-		productRepo: productRepo,
+		repo:         repo,
+		productRepo:  productRepo,
+		activityRepo: activityRepo,
 	}
 }
 
@@ -54,6 +57,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 
 	order, err := s.repo.CreateOrder(ctx, orderDomain)
 	if err != nil {
+		return nil, err
+	}
+
+	//Create order activity
+	activity := &domain.OrderActivity{
+		OrderID:      order.ID,
+		ActivityType: "Order Created",
+		Description:  "Order has been created with total amount " + fmt.Sprintf("%.2f", totalAmount),
+		ActivityAt:   time.Now(), //format time MMMM dd, yyyy hh:mm:ss
+	}
+
+	if err := s.activityRepo.CreateOrderActivity(ctx, activity); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +122,7 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) 
 	return response, nil
 }
 
-func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.CreateOrderResponse, error) {
+func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.GetOrderByIDResponse, error) {
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
 		if err == domain.ErrOrderNotFound {
@@ -119,9 +134,9 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Cr
 		return nil, err
 	}
 
-	var items []dto.CreateOrderItem
+	var items []dto.OrderItemResponse
 	for _, item := range order.Items {
-		items = append(items, dto.CreateOrderItem{
+		items = append(items, dto.OrderItemResponse{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 			Price:     item.Price,
@@ -134,11 +149,44 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Cr
 		})
 	}
 
-	return &dto.CreateOrderResponse{
+	var activities []*dto.OrderActivityResponse
+	for _, activity := range order.Activities {
+		activities = append(activities, &dto.OrderActivityResponse{
+			OrderID:      activity.OrderID,
+			ActivityType: activity.ActivityType,
+			Description:  activity.Description,
+			ActivityAt:   activity.ActivityAt.Format(time.RFC3339),
+		})
+	}
+
+	return &dto.GetOrderByIDResponse{
 		ID:          order.ID,
 		UserID:      order.UserID,
 		OrderDate:   order.OrderDate,
 		TotalAmount: order.TotalAmount,
 		Items:       items,
+		Activities:  activities,
 	}, nil
+}
+
+func (s *OrderService) GetActivitiesByOrderID(ctx context.Context, orderID int64) ([]*dto.OrderActivityResponse, error) {
+	activities, err := s.activityRepo.GetOrderActivitiesByOrderID(ctx, orderID)
+	if err != nil {
+		if err == domain.ErrOrderNotFound {
+			return nil, domain.ErrOrderNotFound
+		}
+		return nil, err
+	}
+
+	var response []*dto.OrderActivityResponse
+	for _, activity := range activities {
+		response = append(response, &dto.OrderActivityResponse{
+			OrderID:      activity.OrderID,
+			ActivityType: activity.ActivityType,
+			Description:  activity.Description,
+			ActivityAt:   activity.ActivityAt.Format(time.RFC3339),
+		})
+	}
+
+	return response, nil
 }

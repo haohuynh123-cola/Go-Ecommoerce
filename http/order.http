@@ -8,7 +8,7 @@ Authorization: {{token}}
 
 ###
 # Get order details by ID
-GET {{SERVER}}/orders/3
+GET {{SERVER}}/orders/6
 Content-Type: application/json
 Authorization: {{token}}
 
