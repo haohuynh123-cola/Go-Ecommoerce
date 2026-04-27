@@ -22,7 +22,7 @@ type CartService interface {
 	AddToCart(ctx context.Context, cart *dto.AddToCartRequest) error
 	GetCartItems(ctx context.Context, userID int64) ([]*CartItem, error)
 	UpdateCartItem(ctx context.Context, cart *dto.UpdateCartItemRequest) error
-	RemoveFromCart(ctx context.Context, userID, productID int64) error
+	RemoveFromCart(ctx context.Context, cart *dto.RemoveFromCartRequest) error
 	ClearCart(ctx context.Context, userID int64) error
 }
 
@@ -32,4 +32,5 @@ type CartRepository interface {
 	UpdateCartItem(ctx context.Context, cart *Cart) error
 	RemoveFromCart(ctx context.Context, userID, productID int64) error
 	ClearCart(ctx context.Context, userID int64) error
+	GetProductInCart(ctx context.Context, userID, productID int64) (*Cart, error)
 }

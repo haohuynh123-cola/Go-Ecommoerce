@@ -1,5 +1,71 @@
 basePath: /api/v1
 definitions:
+  domain.CartItem:
+    properties:
+      product:
+        $ref: '#/definitions/domain.Product'
+      quantity:
+        type: integer
+    type: object
+  domain.Product:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+      sku:
+        type: string
+      stock:
+        type: integer
+    type: object
+  dto.AddToCartRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        minimum: 1
+        type: integer
+      user_id:
+        description: Optional, can be set from context in service layer
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  dto.CreateProductRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      sku:
+        type: string
+      stock:
+        minimum: 0
+        type: integer
+    required:
+    - description
+    - name
+    - price
+    - sku
+    - stock
+    type: object
+  dto.RemoveFromCartRequest:
+    properties:
+      product_id:
+        type: integer
+      user_id:
+        description: Optional, can be set from context in service layer
+        type: integer
+    required:
+    - product_id
+    type: object
   dto.RequestLogin:
     properties:
       email:
@@ -52,6 +118,33 @@ definitions:
       name:
         type: string
     type: object
+  dto.UpdateCartItemRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        minimum: 1
+        type: integer
+      user_id:
+        description: Optional, can be set from context in service layer
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  dto.UpdateProductRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      sku:
+        type: string
+      stock:
+        type: integer
+    type: object
   pkg.ErrorResponseSwag:
     properties:
       code:
@@ -79,6 +172,14 @@ definitions:
         type: integer
       total_pages:
         type: integer
+    type: object
+  pkg.SuccessResponseSwag:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -183,6 +284,169 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /cart/add:
+    post:
+      consumes:
+      - application/json
+      description: Add a product to the user's cart with specified quantity
+      parameters:
+      - description: Add to cart request
+        in: body
+        name: addToCartRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddToCartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.SuccessResponseSwag'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Add item to cart
+      tags:
+      - Cart
+  /cart/clear:
+    post:
+      consumes:
+      - application/json
+      description: Remove all items from the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.SuccessResponseSwag'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Clear cart
+      tags:
+      - Cart
+  /cart/items:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the list of items in the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.SuccessResponseSwag'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.CartItem'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Get cart items
+      tags:
+      - Cart
+  /cart/remove:
+    post:
+      consumes:
+      - application/json
+      description: Remove a product from the user's cart
+      parameters:
+      - description: Remove from cart request
+        in: body
+        name: removeFromCartRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RemoveFromCartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.SuccessResponseSwag'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Remove item from cart
+      tags:
+      - Cart
+  /cart/update:
+    put:
+      consumes:
+      - application/json
+      description: Update the quantity of a product in the user's cart
+      parameters:
+      - description: Update cart item request
+        in: body
+        name: updateCartItemRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.SuccessResponseSwag'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Update cart item quantity
+      tags:
+      - Cart
   /products:
     get:
       consumes:
@@ -222,6 +486,126 @@ paths:
           schema:
             $ref: '#/definitions/pkg.ErrorResponseSwag'
       summary: List products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product with the provided details
+      parameters:
+      - description: Create product request
+        in: body
+        name: createProductRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.SuccessResponseSwag'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Create product
+      tags:
+      - Products
+  /products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing product by ID
+      parameters:
+      - description: Product ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.SuccessResponseSwag'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Delete product
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update the details of an existing product by ID
+      parameters:
+      - description: Product ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update product request
+        in: body
+        name: updateProductRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.SuccessResponseSwag'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponseSwag'
+      summary: Update product
       tags:
       - Products
 securityDefinitions:

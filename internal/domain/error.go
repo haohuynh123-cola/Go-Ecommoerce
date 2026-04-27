@@ -21,4 +21,5 @@ var (
 	ErrCodeInvalidRequest     = "invalid_request"
 	ErrCodeSKUAlreadyExists   = "sku_already_exists"
 	ErrCodeProductNotFound    = "product_not_found"
+	ErrCodeOrderNotFound      = "order_not_found"
 )

@@ -38,6 +38,12 @@ type ErrorResponseSwag struct {
 	Code    string `json:"code,omitempty"`
 }
 
+type SuccessResponseSwag struct {
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
+}
+
 type PaginatedSuccessResponseSwag struct {
 	Status     string          `json:"status"`
 	Data       any             `json:"data"`

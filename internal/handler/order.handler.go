@@ -67,6 +67,14 @@ func (h *OrderHandler) GetOrdersByUserID(c *gin.Context) {
 
 	orders, err := h.service.GetOrdersByUserID(c.Request.Context(), userID)
 	if err != nil {
+		if err == domain.ErrOrderNotFound {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeOrderNotFound, "no orders found for user"))
+			return
+		}
+		if err == domain.ErrProductNotFound {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "no orders found for user"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to retrieve orders"))
 		return
 	}
@@ -84,6 +92,14 @@ func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 
 	order, err := h.service.GetOrderByID(c.Request.Context(), orderID)
 	if err != nil {
+		if err == domain.ErrOrderNotFound {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeOrderNotFound, "order not found"))
+			return
+		}
+		if err == domain.ErrProductNotFound {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "product not found"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to retrieve order details"))
 		return
 	}

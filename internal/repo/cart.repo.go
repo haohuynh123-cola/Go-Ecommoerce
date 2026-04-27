@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 
 	"github.com/jmoiron/sqlx"
@@ -54,10 +56,16 @@ func (r *CartRepository) GetCartItems(ctx context.Context, userID int64) ([]*dom
 	return carts, nil
 }
 
-func (r *CartRepository) RemoveFromCart(ctx context.Context, userID int64, productID int64) error {
+func (r *CartRepository) RemoveFromCart(ctx context.Context, userID, productID int64) error {
 	query := `DELETE FROM carts WHERE user_id = ? AND product_id = ?`
 	_, err := r.DB.ExecContext(ctx, query, userID, productID)
-	return err
+
+	if err != nil {
+		fmt.Printf("Error removing item from cart: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 func (r *CartRepository) UpdateCartItem(ctx context.Context, cart *domain.Cart) error {
@@ -70,4 +78,18 @@ func (r *CartRepository) ClearCart(ctx context.Context, userID int64) error {
 	query := `DELETE FROM carts WHERE user_id = ?`
 	_, err := r.DB.ExecContext(ctx, query, userID)
 	return err
+}
+
+func (r *CartRepository) GetProductInCart(ctx context.Context, userID, productID int64) (*domain.Cart, error) {
+	query := `SELECT id, user_id, product_id, quantity FROM carts WHERE user_id = ? AND product_id = ?`
+	row := r.DB.QueryRowContext(ctx, query, userID, productID)
+
+	cart := &domain.Cart{}
+	if err := row.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.Quantity); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrProductNotFound
+		}
+		return nil, err
+	}
+	return cart, nil
 }

@@ -13,7 +13,7 @@ Content-Type: application/json
   "description": "This is a sample product.",
   "price": 19.99,
   "stock": 100,
-  "sku": "SP-004"
+  "sku": "SP-006"
 }
 
 

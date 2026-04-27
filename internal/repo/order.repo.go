@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"haohuynh123-cola/ecommce/internal/domain"
 
 	"github.com/jmoiron/sqlx"
@@ -46,6 +47,9 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 	query := `SELECT id, user_id, order_date, total_amount, status FROM orders WHERE user_id = ?`
 	rows, err := r.db.QueryxContext(ctx, query, userID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrOrderNotFound
+		}
 		return nil, err
 	}
 	defer rows.Close()
@@ -100,6 +104,10 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID int64) (*dom
 	query := `SELECT id, user_id, order_date, total_amount, status FROM orders WHERE id = ?`
 	var order domain.Order
 	if err := r.db.GetContext(ctx, &order, query, orderID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrOrderNotFound
+		}
+
 		return nil, err
 	}
 

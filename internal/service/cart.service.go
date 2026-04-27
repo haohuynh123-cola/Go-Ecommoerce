@@ -23,15 +23,19 @@ func NewCartService(repo domain.CartRepository, rdb *cache.CartCache) domain.Car
 }
 
 func (s *CartService) AddToCart(ctx context.Context, cart *dto.AddToCartRequest) error {
-	// Implement logic to add item to cart
-	//format the request to domain.Cart
 	cartItem := &domain.Cart{
 		UserID:    cart.UserID,
 		ProductID: cart.ProductID,
 		Quantity:  cart.Quantity,
 	}
 
-	return s.repo.AddToCart(ctx, cartItem)
+	if err := s.repo.AddToCart(ctx, cartItem); err != nil {
+		return fmt.Errorf("failed to add item to cart: %w", err)
+	}
+
+	// Invalidate cached cart so the next GET /cart/items reflects the new item.
+	_ = s.rdb.ClearCart(ctx, keyCache(cart.UserID))
+	return nil
 }
 
 func keyCache(userID int64) string {
@@ -56,28 +60,46 @@ func (s *CartService) GetCartItems(ctx context.Context, userID int64) ([]*domain
 	return items, nil
 }
 
-func (s *CartService) RemoveFromCart(ctx context.Context, userID int64, productID int64) error {
-	// Implement logic to remove item from cart
-	key := keyCache(userID)
-	// Clear the cache for the user
-	_ = s.rdb.ClearCart(ctx, key)
+func (s *CartService) RemoveFromCart(ctx context.Context, req *dto.RemoveFromCartRequest) error {
+	cartExist, err := s.repo.GetProductInCart(ctx, req.UserID, req.ProductID)
+	if err != nil {
+		return fmt.Errorf("failed to look up cart item: %w", err)
+	}
+	if cartExist == nil {
+		return domain.ErrProductNotFound
+	}
 
-	return s.repo.RemoveFromCart(ctx, userID, productID)
+	if err := s.repo.RemoveFromCart(ctx, req.UserID, req.ProductID); err != nil {
+		return fmt.Errorf("failed to remove cart item: %w", err)
+	}
+
+	// Invalidate cache after the DB write succeeds.
+	_ = s.rdb.ClearCart(ctx, keyCache(req.UserID))
+	return nil
 }
 
 func (s *CartService) UpdateCartItem(ctx context.Context, cart *dto.UpdateCartItemRequest) error {
-	// Implement logic to update cart item quantity
+	cartExist, err := s.repo.GetProductInCart(ctx, cart.UserID, cart.ProductID)
+	if err != nil {
+		return fmt.Errorf("failed to look up cart item: %w", err)
+	}
+	if cartExist == nil {
+		return domain.ErrProductNotFound
+	}
+
 	cartItem := &domain.Cart{
 		UserID:    cart.UserID,
 		ProductID: cart.ProductID,
 		Quantity:  cart.Quantity,
 	}
-	key := keyCache(cart.UserID)
-	// Clear the cache for the user
-	items := toCartItems([]*domain.Cart{cartItem})
-	_ = s.rdb.SetCartItems(ctx, key, items)
 
-	return s.repo.UpdateCartItem(ctx, cartItem)
+	if err := s.repo.UpdateCartItem(ctx, cartItem); err != nil {
+		return fmt.Errorf("failed to update cart item: %w", err)
+	}
+
+	// Invalidate cache so the next read repopulates from the DB with the joined product.
+	_ = s.rdb.ClearCart(ctx, keyCache(cart.UserID))
+	return nil
 }
 
 func (s *CartService) ClearCart(ctx context.Context, userID int64) error {

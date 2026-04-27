@@ -1,16 +1,40 @@
 @SERVER=http://localhost:8080/api/v1
-@token=
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzczNDUyODIsImdtYWlsIjoiaHV5bmhraW5oYW9AZ21pYWwuY29tIiwibmFtZSI6Ikh14buzbmggS8OtbiBIw6BvIiwidXNlcl9pZCI6MX0.31CRNGQe5l1Gi4Bd5xJOo9_Z0AK6dAvPrtXW_mEykq0
 //Add to cart (requires authentication)
 POST {{SERVER}}/cart/add
 Content-Type: application/json
 Authorization: {{token}}
 
 {
-  "product_id": 1,
+  "product_id": 2,
   "quantity": 2
 }
 
 ###
 GET {{SERVER}}/cart/items
+Content-Type: application/json
+Authorization: {{token}}
+
+###
+POST {{SERVER}}/cart/remove
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "product_id": 3
+}
+
+###
+PUT {{SERVER}}/cart/update
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "product_id": 2,
+  "quantity": 5
+}
+
+### Clear cart
+POST {{SERVER}}/cart/clear
 Content-Type: application/json
 Authorization: {{token}}
