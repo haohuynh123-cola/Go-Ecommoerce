@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/helper"
 
@@ -60,7 +61,7 @@ func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*doma
 	err := r.db.GetContext(ctx, &product, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, domain.ErrProductNotFound
 		}
 		return nil, err
 	}
@@ -135,8 +136,8 @@ func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (*d
 	var product domain.Product
 	err := r.db.GetContext(ctx, &product, query, sku)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrProductNotFound
 		}
 		return nil, err
 	}

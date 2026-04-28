@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
@@ -40,7 +41,6 @@ func (h *OrderHandler) RegisterOrderRoutes(r *gin.Engine) {
 // @Produce json
 // @Param order body dto.CreateOrderRequest true "Order details"
 // @security     BearerAuth
-// @Param authorization header string true "Bearer token"
 // @Success 200 {object} pkg.SuccessResponseSwag{data=dto.GetOrdersResponse}
 // @Failure 400 {object} pkg.ErrorResponseSwag
 // @Failure 401 {object} pkg.ErrorResponseSwag
@@ -64,6 +64,10 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	order, err := h.service.CreateOrder(c.Request.Context(), &req)
 	if err != nil {
+		if errors.Is(err, domain.ErrProductNotFound) {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "product not found"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to create order"))
 		return
 	}

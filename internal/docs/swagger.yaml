@@ -555,11 +555,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dto.CreateOrderRequest'
-      - description: Bearer token
-        in: header
-        name: authorization
-        required: true
-        type: string
       produces:
       - application/json
       responses:

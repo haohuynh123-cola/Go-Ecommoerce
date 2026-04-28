@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
@@ -29,6 +30,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	for i, item := range req.Items {
 		product, err := s.productRepo.GetProductByID(ctx, item.ProductID)
 		if err != nil {
+			if errors.Is(err, domain.ErrProductNotFound) {
+				return nil, domain.ErrProductNotFound
+			}
 			return nil, err
 		}
 		orderItems[i] = domain.OrderItem{

@@ -499,13 +499,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.CreateOrderRequest"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
