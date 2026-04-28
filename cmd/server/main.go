@@ -48,6 +48,8 @@ func main() {
 	}
 	defer redisClient.Close()
 
+	// Initialize Log system
+
 	r := initialize.SetupRouter(&cfg.Server) // Initialize routes
 
 	//use rate limiter middleware for all routes,  1 minute 100 requests per minute
@@ -78,7 +80,8 @@ func main() {
 	orderRepo := repo.NewOrderRepository(db)
 	orderItemRepo := repo.NewOrderItemRepository(db)
 	orderActivityRepo := repo.NewOrderActivityRepository(db)
-	orderService := service.NewOrderService(orderRepo, orderItemRepo, productRepo, orderActivityRepo)
+	orderCache := cache.NewOrderCache(redisClient, 30*time.Minute)
+	orderService := service.NewOrderService(orderRepo, orderItemRepo, productRepo, orderActivityRepo, orderCache)
 	orderHandler := handler.NewOrderHandler(orderService, cfg.JWT)
 	orderHandler.RegisterOrderRoutes(r)
 

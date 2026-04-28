@@ -17,3 +17,7 @@ redis:
 
 jwt:
       secret_key: "haohuynh19123131312312312"
+
+log:
+      level: "info"
+      file_path: "logs/app.log"

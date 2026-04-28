@@ -31,6 +31,8 @@ func NewAuthHandler(authService domain.IAuthService, cfg config.JWTConfig) *Auth
 }
 
 func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
+	InitializeAuthService() // Initialize the auth service and handler
+
 	authGroup := r.Group("api/v1/auth")
 	authGroup.POST("/login", h.Login)
 	authGroup.POST("/register", h.Register)

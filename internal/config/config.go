@@ -9,6 +9,7 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Server   ServerConfig   `mapstructure:"server"`
+	Log      LogConfig      `mapstructure:"log"`
 }
 
 type DatabaseConfig struct {
@@ -32,6 +33,11 @@ type RedisConfig struct {
 
 type JWTConfig struct {
 	SecretKey string `mapstructure:"secret_key"`
+}
+
+type LogConfig struct {
+	Level    string `mapstructure:"level"`
+	FilePath string `mapstructure:"file_path"`
 }
 
 func LoadConfig() (*Config, error) {

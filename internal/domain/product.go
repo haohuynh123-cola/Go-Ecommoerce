@@ -32,6 +32,7 @@ type ProductService interface {
 type ProductRepository interface {
 	CreateProduct(ctx context.Context, product *Product) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
+	GetProductByIDs(ctx context.Context, ids []int64) ([]*Product, error)
 	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context, req ProductFilter) ([]*Product, error)

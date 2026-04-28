@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"time"
@@ -14,14 +15,16 @@ type OrderService struct {
 	orderItem    domain.OrderItemRepository
 	productRepo  domain.ProductRepository
 	activityRepo domain.OrderActivityRepository
+	rdb          *cache.OrderCache
 }
 
-func NewOrderService(repo domain.OrderRepository, orderItem domain.OrderItemRepository, productRepo domain.ProductRepository, activityRepo domain.OrderActivityRepository) domain.OrderService {
+func NewOrderService(repo domain.OrderRepository, orderItem domain.OrderItemRepository, productRepo domain.ProductRepository, activityRepo domain.OrderActivityRepository, rdb *cache.OrderCache) domain.OrderService {
 	return &OrderService{
 		repo:         repo,
 		orderItem:    orderItem,
 		productRepo:  productRepo,
 		activityRepo: activityRepo,
+		rdb:          rdb,
 	}
 }
 
@@ -149,7 +152,14 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) 
 	return response, nil
 }
 
+// GetOrderByID implements domain.OrderService
 func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.GetOrderByIDResponse, error) {
+	getCache, err := s.rdb.GetOrder(ctx, orderID)
+	if err == nil {
+		if cachedData, ok := getCache.(*dto.GetOrderByIDResponse); ok {
+			return cachedData, nil
+		}
+	}
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
 		return nil, err
@@ -169,6 +179,36 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Ge
 		})
 	}
 
+	//Load product details for each order item
+	productIDs := make([]int64, len(items))
+	for i, item := range items {
+		productIDs[i] = item.ProductID
+	}
+
+	products, err := s.productRepo.GetProductByIDs(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	productMap := make(map[int64]*domain.Product)
+	for _, product := range products {
+		productMap[product.ID] = product
+	}
+
+	for i, item := range items {
+		product, ok := productMap[item.ProductID]
+		if !ok {
+			return nil, domain.ErrProductNotFound
+		}
+		items[i].Product = &dto.Product{
+			ID:          product.ID,
+			Name:        product.Name,
+			Description: product.Description,
+			SKU:         product.SKU,
+			Price:       product.Price,
+		}
+	}
+
 	//Load order activities
 	var activities []dto.OrderActivityResponse
 	activityQuery, err := s.activityRepo.GetOrderActivitiesByOrderID(ctx, orderID)
@@ -184,14 +224,20 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Ge
 		})
 	}
 
-	return &dto.GetOrderByIDResponse{
+	//Set cache
+	cacheData := &dto.GetOrderByIDResponse{
 		ID:          order.ID,
 		UserID:      order.UserID,
 		OrderDate:   order.OrderDate,
 		TotalAmount: order.TotalAmount,
 		Items:       items,
 		Activities:  activities,
-	}, nil
+	}
+	if err := s.rdb.SetOrder(ctx, orderID, cacheData); err != nil {
+		fmt.Printf("Failed to set cache for order %d: %v\n", orderID, err)
+	}
+
+	return cacheData, nil
 }
 
 func (s *OrderService) GetActivitiesByOrderID(ctx context.Context, orderID int64) ([]*dto.OrderActivityResponse, error) {

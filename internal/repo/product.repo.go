@@ -154,3 +154,18 @@ func (r *ProductRepository) GetTotalProducts(ctx context.Context) (int64, error)
 	}
 	return count, nil
 }
+
+func (r *ProductRepository) GetProductByIDs(ctx context.Context, ids []int64) ([]*domain.Product, error) {
+	query, args, err := sqlx.In(`SELECT id, name, description, sku, price, stock FROM products WHERE id IN (?)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+
+	var products []*domain.Product
+	err = r.db.SelectContext(ctx, &products, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}
