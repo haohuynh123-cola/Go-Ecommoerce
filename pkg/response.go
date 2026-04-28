@@ -9,11 +9,11 @@ import (
 )
 
 type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
-	Code    string `json:"code,omitempty"`
-	Errors  any    `json:"errors,omitempty"`
+	Status  string      `json:"status"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Code    string      `json:"code,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
 }
 
 type PaginatedResponse struct {

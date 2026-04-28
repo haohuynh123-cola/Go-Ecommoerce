@@ -48,7 +48,7 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	r := initialize.SetupRouter() // Initialize routes
+	r := initialize.SetupRouter(&cfg.Server) // Initialize routes
 
 	//use rate limiter middleware for all routes,  1 minute 100 requests per minute
 	globalLimit := middleware.NewRateLimiter(redisClient, 100, time.Minute)

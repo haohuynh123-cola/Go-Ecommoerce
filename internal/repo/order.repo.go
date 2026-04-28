@@ -19,8 +19,14 @@ func NewOrderRepository(db *sqlx.DB) domain.OrderRepository {
 }
 
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	query := `INSERT INTO orders (user_id, order_date, total_amount) VALUES (?, ?, ?)`
-	result, err := r.db.ExecContext(ctx, query, order.UserID, order.OrderDate, order.TotalAmount)
+	result, err := tx.ExecContext(ctx, query, order.UserID, order.OrderDate, order.TotalAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +41,17 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) 
 	for _, item := range order.Items {
 		item.OrderID = orderID
 		itemQuery := `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`
-		_, err := r.db.ExecContext(ctx, itemQuery, item.OrderID, item.ProductID, item.Quantity, item.Price)
+		_, err := tx.ExecContext(ctx, itemQuery, item.OrderID, item.ProductID, item.Quantity, item.Price)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 	return order, nil
-}	
+}
 
 func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) ([]*domain.Order, error) {
 	query := `SELECT id, user_id, order_date, total_amount, status FROM orders WHERE user_id = ?`

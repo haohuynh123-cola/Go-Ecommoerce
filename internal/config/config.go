@@ -8,6 +8,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Redis    RedisConfig    `mapstructure:"redis"`
+	Server   ServerConfig   `mapstructure:"server"`
 }
 
 type DatabaseConfig struct {
@@ -16,6 +17,10 @@ type DatabaseConfig struct {
 	DBUser     string `mapstructure:"user"`
 	DBPassword string `mapstructure:"password"`
 	DBName     string `mapstructure:"database_name"`
+}
+
+type ServerConfig struct {
+	Debug bool `mapstructure:"debug"`
 }
 
 type RedisConfig struct {

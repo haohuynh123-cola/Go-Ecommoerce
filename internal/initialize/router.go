@@ -6,12 +6,20 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"haohuynh123-cola/ecommce/internal/config"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // SetupRouter initializes the Gin router and registers all routes
-func SetupRouter() *gin.Engine {
+func SetupRouter(serverConfig *config.ServerConfig) *gin.Engine {
+	if serverConfig.Debug {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
