@@ -15,7 +15,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-const productCacheTTL = 5 * time.Minute
+const (
+	productCacheTTL = 5 * time.Minute
+	cartCacheTTL    = 30 * time.Minute
+	orderCacheTTL   = 30 * time.Minute
+)
 
 // SetupRouter initializes the Gin router and registers all routes
 func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine {
@@ -44,10 +48,10 @@ func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine
 	productHandler := di.InitializeProductHandler(db, rdb, productCacheTTL)
 	productHandler.RegisterRoutes(r)
 
-	cartHandler := di.InitializeCartHandler(db, rdb, productCacheTTL, cfg.JWT)
+	cartHandler := di.InitializeCartHandler(db, rdb, cartCacheTTL, cfg.JWT)
 	cartHandler.RegisterRoutes(r)
 
-	orderHandler := di.InitializeOrderHandler(db, rdb, productCacheTTL, cfg.JWT)
+	orderHandler := di.InitializeOrderHandler(db, rdb, orderCacheTTL, cfg.JWT)
 	orderHandler.RegisterRoutes(r)
 
 	return r
