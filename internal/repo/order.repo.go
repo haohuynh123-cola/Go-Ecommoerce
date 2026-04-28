@@ -41,7 +41,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) 
 		}
 	}
 	return order, nil
-}
+}	
 
 func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) ([]*domain.Order, error) {
 	query := `SELECT id, user_id, order_date, total_amount, status FROM orders WHERE user_id = ?`

@@ -94,7 +94,7 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) 
 	orders, err := s.repo.GetOrdersByUserID(ctx, customerID)
 	if err != nil {
 		if err == domain.ErrOrderNotFound {
-			return nil, domain.ErrOrderNotFound // Return empty slice if no orders found
+			return nil, err
 		}
 		return nil, err
 	}
@@ -125,12 +125,6 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) 
 func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.GetOrderByIDResponse, error) {
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
-		if err == domain.ErrOrderNotFound {
-			return nil, domain.ErrOrderNotFound
-		}
-		if err == domain.ErrProductNotFound {
-			return nil, domain.ErrProductNotFound
-		}
 		return nil, err
 	}
 

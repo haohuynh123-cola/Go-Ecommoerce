@@ -6,6 +6,7 @@ import (
 )
 
 type OrderActivity struct {
+	ID           int64     `json:"id" db:"id"`
 	OrderID      int64     `json:"order_id" db:"order_id"`
 	Description  string    `json:"description" db:"description"`
 	ActivityType string    `json:"activity_type" db:"activity_type"`
