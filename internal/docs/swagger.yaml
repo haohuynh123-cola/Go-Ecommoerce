@@ -103,6 +103,8 @@ definitions:
         type: array
       order_date:
         type: string
+      status:
+        type: string
       total_amount:
         type: number
       user_id:
@@ -116,6 +118,8 @@ definitions:
         type: integer
       name:
         type: string
+      price:
+        type: number
       sku:
         type: string
     type: object
@@ -378,6 +382,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/pkg.ErrorResponseSwag'
+      security:
+      - BearerAuth: []
       summary: Add item to cart
       tags:
       - Cart
@@ -431,6 +437,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/pkg.ErrorResponseSwag'
+      security:
+      - BearerAuth: []
       summary: Get cart items
       tags:
       - Cart
@@ -469,6 +477,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/pkg.ErrorResponseSwag'
+      security:
+      - BearerAuth: []
       summary: Remove item from cart
       tags:
       - Cart

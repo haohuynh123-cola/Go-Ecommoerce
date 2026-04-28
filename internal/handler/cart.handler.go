@@ -43,6 +43,7 @@ func (h *CartHandler) RegisterRoutes(r *gin.Engine) {
 // @Accept       json
 // @Produce      json
 // @Param        addToCartRequest  body      dto.AddToCartRequest  true  "Add to cart request"
+// @security     BearerAuth
 // @Success      200  {object}  pkg.SuccessResponseSwag
 // @Failure      400  {object}  pkg.ErrorResponseSwag
 // @Failure      401  {object}  pkg.ErrorResponseSwag
@@ -78,6 +79,7 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 // @Tags         Cart
 // @Accept       json
 // @Produce      json
+// @security     BearerAuth
 // @Success      200  {object}  pkg.SuccessResponseSwag{data=[]domain.CartItem}
 // @Failure      401  {object}  pkg.ErrorResponseSwag
 // @Failure      500  {object}  pkg.ErrorResponseSwag
@@ -106,6 +108,7 @@ func (h *CartHandler) GetCartItems(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        removeFromCartRequest  body      dto.RemoveFromCartRequest  true  "Remove from cart request"
+// @security     BearerAuth
 // @Success      200  {object}  pkg.SuccessResponseSwag
 // @Failure      400  {object}  pkg.ErrorResponseSwag
 // @Failure      401  {object}  pkg.ErrorResponseSwag

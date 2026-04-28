@@ -5,16 +5,21 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 
 	"haohuynh123-cola/ecommce/internal/config"
+	"haohuynh123-cola/ecommce/internal/di"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+const productCacheTTL = 5 * time.Minute
+
 // SetupRouter initializes the Gin router and registers all routes
-func SetupRouter(serverConfig *config.ServerConfig) *gin.Engine {
-	if serverConfig.Debug {
+func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine {
+	if cfg.Server.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -32,6 +37,18 @@ func SetupRouter(serverConfig *config.ServerConfig) *gin.Engine {
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	authHandler := di.InitializeAuthHandler(db, cfg.JWT)
+	authHandler.RegisterRoutes(r)
+
+	productHandler := di.InitializeProductHandler(db, rdb, productCacheTTL)
+	productHandler.RegisterRoutes(r)
+
+	cartHandler := di.InitializeCartHandler(db, rdb, productCacheTTL, cfg.JWT)
+	cartHandler.RegisterRoutes(r)
+
+	orderHandler := di.InitializeOrderHandler(db, rdb, productCacheTTL, cfg.JWT)
+	orderHandler.RegisterRoutes(r)
 
 	return r
 }

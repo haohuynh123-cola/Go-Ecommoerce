@@ -25,7 +25,7 @@ func NewOrderHandler(service domain.OrderService, cfg config.JWTConfig) *OrderHa
 	}
 }
 
-func (h *OrderHandler) RegisterOrderRoutes(r *gin.Engine) {
+func (h *OrderHandler) RegisterRoutes(r *gin.Engine) {
 	orderGroup := r.Group("/api/v1/orders")
 	orderGroup.Use(middleware.AuthMiddleware(&h.cfg)) // Apply authentication middleware to order routes
 	orderGroup.POST("/", h.CreateOrder)

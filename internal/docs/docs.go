@@ -165,6 +165,11 @@ const docTemplate = `{
         },
         "/cart/add": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Add a product to the user's cart with specified quantity",
                 "consumes": [
                     "application/json"
@@ -252,6 +257,11 @@ const docTemplate = `{
         },
         "/cart/items": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve the list of items in the user's cart",
                 "consumes": [
                     "application/json"
@@ -302,6 +312,11 @@ const docTemplate = `{
         },
         "/cart/remove": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Remove a product from the user's cart",
                 "consumes": [
                     "application/json"
@@ -1020,6 +1035,9 @@ const docTemplate = `{
                 "order_date": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string"
+                },
                 "total_amount": {
                     "type": "number"
                 },
@@ -1039,6 +1057,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "price": {
+                    "type": "number"
                 },
                 "sku": {
                     "type": "string"
