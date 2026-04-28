@@ -37,16 +37,6 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) 
 	}
 	order.ID = orderID
 
-	// Insert order items
-	for _, item := range order.Items {
-		item.OrderID = orderID
-		itemQuery := `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`
-		_, err := tx.ExecContext(ctx, itemQuery, item.OrderID, item.ProductID, item.Quantity, item.Price)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -65,7 +55,6 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 	defer rows.Close()
 
 	var orders []*domain.Order
-	orderMap := make(map[int64]*domain.Order) // để map items về đúng order
 
 	for rows.Next() {
 		var order domain.Order
@@ -88,24 +77,13 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 	if err != nil {
 		return nil, err
 	}
-	itemQuery = r.db.Rebind(itemQuery) // chuẩn hóa placeholder cho từng driver
+	itemQuery = r.db.Rebind(itemQuery)
 
 	itemRows, err := r.db.QueryxContext(ctx, itemQuery, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer itemRows.Close()
-
-	for itemRows.Next() {
-		var item domain.OrderItem
-		if err := itemRows.StructScan(&item); err != nil {
-			return nil, err
-		}
-		// Gắn item vào đúng order qua map — O(1)
-		if order, ok := orderMap[item.OrderID]; ok {
-			order.Items = append(order.Items, item)
-		}
-	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -125,42 +103,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID int64) (*dom
 		return nil, err
 	}
 
-	items, err := loadOrderItems(ctx, r.db, orderID)
-	if err != nil {
-		return nil, err
-	}
-	order.Items = items
-
-	activities, err := loadOrderActivities(ctx, r.db, orderID)
-	if err != nil {
-		return nil, err
-	}
-	order.Activities = activities
-
 	return &order, nil
-}
-
-func loadOrderItems(ctx context.Context, db *sqlx.DB, orderID int64) ([]domain.OrderItem, error) {
-	itemQuery := `SELECT id, order_id, product_id, quantity, price FROM order_items WHERE order_id = ?`
-	var items []domain.OrderItem
-	if err := db.SelectContext(ctx, &items, itemQuery, orderID); err != nil {
-		return nil, err
-	}
-
-	// Load product details for items
-	productMap, err := loadProductsInOrder(ctx, db, items)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range items {
-		if product, ok := productMap[items[i].ProductID]; ok {
-			items[i].Product = product
-		}
-	}
-
-	return items, nil
-
 }
 
 func loadProductsInOrder(ctx context.Context, db *sqlx.DB, items []domain.OrderItem) (map[int64]*domain.Product, error) {

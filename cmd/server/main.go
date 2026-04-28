@@ -76,8 +76,9 @@ func main() {
 
 	// Register order routes
 	orderRepo := repo.NewOrderRepository(db)
+	orderItemRepo := repo.NewOrderItemRepository(db)
 	orderActivityRepo := repo.NewOrderActivityRepository(db)
-	orderService := service.NewOrderService(orderRepo, productRepo, orderActivityRepo)
+	orderService := service.NewOrderService(orderRepo, orderItemRepo, productRepo, orderActivityRepo)
 	orderHandler := handler.NewOrderHandler(orderService, cfg.JWT)
 	orderHandler.RegisterOrderRoutes(r)
 

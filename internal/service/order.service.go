@@ -11,19 +11,22 @@ import (
 
 type OrderService struct {
 	repo         domain.OrderRepository
+	orderItem    domain.OrderItemRepository
 	productRepo  domain.ProductRepository
 	activityRepo domain.OrderActivityRepository
 }
 
-func NewOrderService(repo domain.OrderRepository, productRepo domain.ProductRepository, activityRepo domain.OrderActivityRepository) domain.OrderService {
+func NewOrderService(repo domain.OrderRepository, orderItem domain.OrderItemRepository, productRepo domain.ProductRepository, activityRepo domain.OrderActivityRepository) domain.OrderService {
 	return &OrderService{
 		repo:         repo,
+		orderItem:    orderItem,
 		productRepo:  productRepo,
 		activityRepo: activityRepo,
 	}
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error) {
+
 	//Get Product details and calculate total amount
 	orderItems := make([]domain.OrderItem, len(req.Items))
 	var totalAmount float64
@@ -56,12 +59,25 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 		UserID:      req.UserID,
 		OrderDate:   time.Now(),
 		TotalAmount: totalAmount,
-		Items:       items,
+		Status:      "Created",
 	}
 
 	order, err := s.repo.CreateOrder(ctx, orderDomain)
 	if err != nil {
 		return nil, err
+	}
+
+	//Create order Items no polem N+1 problem because we have orderID after creating order
+	for _, item := range orderItems {
+		orderItem := &domain.OrderItem{
+			OrderID:   order.ID,
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+			Price:     item.Price,
+		}
+		if err := s.orderItem.CreateOrderItems(ctx, []*domain.OrderItem{orderItem}); err != nil {
+			return nil, err
+		}
 	}
 
 	//Create order activity
@@ -76,8 +92,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 		return nil, err
 	}
 
-	itemsResponse := make([]dto.CreateOrderItem, len(order.Items))
-	for i, item := range order.Items {
+	itemsResponse := make([]dto.CreateOrderItem, len(orderItems))
+	for i, item := range orderItems {
 		itemsResponse[i] = dto.CreateOrderItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
@@ -94,7 +110,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	}, nil
 }
 
-func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) ([]*dto.CreateOrderResponse, error) {
+func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) ([]*dto.OrderResponse, error) {
 	orders, err := s.repo.GetOrdersByUserID(ctx, customerID)
 	if err != nil {
 		if err == domain.ErrOrderNotFound {
@@ -103,22 +119,29 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) 
 		return nil, err
 	}
 
-	var response []*dto.CreateOrderResponse
+	//Load order items for each order
+	var response []*dto.OrderResponse
 	for _, order := range orders {
-		var items []dto.CreateOrderItem
-		for _, item := range order.Items {
-			items = append(items, dto.CreateOrderItem{
+		orderItems, err := s.orderItem.GetOrderItemsByOrderID(ctx, order.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		var items []dto.OrderItemResponse
+		for _, item := range orderItems {
+			items = append(items, dto.OrderItemResponse{
 				ProductID: item.ProductID,
 				Quantity:  item.Quantity,
 				Price:     item.Price,
 			})
 		}
 
-		response = append(response, &dto.CreateOrderResponse{
+		response = append(response, &dto.OrderResponse{
 			ID:          order.ID,
 			UserID:      order.UserID,
 			OrderDate:   order.OrderDate,
 			TotalAmount: order.TotalAmount,
+			Status:      order.Status,
 			Items:       items,
 		})
 	}
@@ -133,23 +156,27 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Ge
 	}
 
 	var items []dto.OrderItemResponse
-	for _, item := range order.Items {
+	//Load order items
+	orderItems, err := s.orderItem.GetOrderItemsByOrderID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range orderItems {
 		items = append(items, dto.OrderItemResponse{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 			Price:     item.Price,
-			Product: &dto.Product{
-				ID:          item.Product.ID,
-				Name:        item.Product.Name,
-				Description: item.Product.Description,
-				SKU:         item.Product.SKU,
-			},
 		})
 	}
 
-	var activities []*dto.OrderActivityResponse
-	for _, activity := range order.Activities {
-		activities = append(activities, &dto.OrderActivityResponse{
+	//Load order activities
+	var activities []dto.OrderActivityResponse
+	activityQuery, err := s.activityRepo.GetOrderActivitiesByOrderID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+	for _, activity := range activityQuery {
+		activities = append(activities, dto.OrderActivityResponse{
 			OrderID:      activity.OrderID,
 			ActivityType: activity.ActivityType,
 			Description:  activity.Description,
