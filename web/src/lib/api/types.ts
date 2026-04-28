@@ -83,12 +83,18 @@ export interface CartItem {
 }
 
 // ─── Order ────────────────────────────────────────────────────
-/** dto.Product (embedded in OrderItem) — no price/stock here. */
+
+/** Status enum — must stay in sync with the Go backend's OrderStatus type. */
+export const ORDER_STATUSES = ['Created', 'Confirmed', 'Shipping', 'Delivered', 'Cancelled'] as const;
+export type OrderStatus = typeof ORDER_STATUSES[number];
+
+/** dto.Product (embedded in OrderItem) — price is present per the actual API response. */
 export interface OrderItemProduct {
   id: number;
   name: string;
   description: string;
   sku: string;
+  price?: number;
 }
 
 /**
@@ -104,20 +110,29 @@ export interface OrderItem {
 
 /**
  * Backend: dto.CreateOrderResponse / list item.
- * Fields: id, user_id, order_date (ISO timestamp), total_amount, items.
- * There is NO status, NO created_at, NO total_price, NO updated_at on the backend.
- *
- * The `statusLabel` used in the UI is a UI-only placeholder —
- * the backend has no status column. Remove this comment when the backend adds one.
+ * Fields: id, user_id, order_date (ISO timestamp), total_amount, status, items.
+ * `status` is present from PATCH /orders/:id/status and GET /orders/:id.
+ * `activities` is only present on GET /orders/:id (detail) — the list endpoint omits it.
  */
 export interface Order {
   id: number;
   user_id: number;
   order_date: string;
   total_amount: number;
+  status?: OrderStatus;
   items: OrderItem[];
+  /** Populated on GET /orders/:id only. Sorted DESC by the backend; sort defensively client-side. */
+  activities?: OrderActivity[];
 }
 
 export interface CreateOrderPayload {
   items: Array<{ product_id: number; quantity: number }>;
+}
+
+/** Activity log entry returned by GET /orders/:id/activities */
+export interface OrderActivity {
+  order_id: number;
+  activity_type: string;
+  description: string;
+  activity_at: string;
 }

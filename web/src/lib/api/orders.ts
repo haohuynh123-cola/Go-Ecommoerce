@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { ApiSuccess, Order, CreateOrderPayload } from './types';
+import type { ApiSuccess, Order, OrderStatus, CreateOrderPayload } from './types';
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   const res = await apiClient.post<ApiSuccess<Order>>('/orders/', payload);
@@ -26,3 +26,13 @@ export async function getOrder(id: number): Promise<Order> {
   const res = await apiClient.get<ApiSuccess<Order>>(`/orders/${id}`);
   return res.data.data;
 }
+
+/**
+ * PATCH /orders/:id/status — update order status.
+ * Returns the full updated order detail (same shape as GET /orders/:id).
+ */
+export async function updateOrderStatus(id: number, status: OrderStatus): Promise<Order> {
+  const res = await apiClient.patch<ApiSuccess<Order>>(`/orders/${id}/status`, { status });
+  return res.data.data;
+}
+

@@ -16,15 +16,16 @@ import {
   Pagination,
   SearchInput,
   SegmentedControl,
-  StatCard,
   StatusPill,
 } from '@/components/ui';
+import { KpiCard } from '@/components/dashboard';
 import {
   IconBox,
   IconDownload,
   IconEdit,
   IconFilter,
   IconPlus,
+  IconStore,
   IconTrash,
 } from '@/components/layout/icons';
 import type { Product } from '@/lib/api/types';
@@ -97,10 +98,30 @@ export function AdminProductsPage() {
       />
 
       {/* ─── Stat strip ─────────────────────────────────────── */}
-      <ul className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-        <StatCard variant="mini" label="Total products" value={String(stats.total)} />
-        <StatCard variant="mini" label="In stock"       value={String(stats.inStock)}    valueColor="success" />
-        <StatCard variant="mini" label="Out of stock"   value={String(stats.outOfStock)} valueColor="error" />
+      <ul className="grid gap-3 grid-cols-1 sm:grid-cols-3" aria-label="Product summary">
+        <KpiCard
+          label="Total products"
+          value={String(stats.total)}
+          icon={<IconStore />}
+          subtitle="All listings"
+          loading={isLoading}
+        />
+        <KpiCard
+          label="In stock"
+          value={String(stats.inStock)}
+          icon={<IconBox />}
+          valueColor="success"
+          subtitle="Available to sell"
+          loading={isLoading}
+        />
+        <KpiCard
+          label="Out of stock"
+          value={String(stats.outOfStock)}
+          icon={<IconBox />}
+          valueColor="error"
+          subtitle="Needs restock"
+          loading={isLoading}
+        />
       </ul>
 
       {/* ─── Toolbar ───────────────────────────────────────── */}

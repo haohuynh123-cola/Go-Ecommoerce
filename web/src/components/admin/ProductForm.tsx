@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { createProduct, updateProduct } from '@/lib/api/products';
-import { Field, inputClass, InlineError, SectionLabel } from '@/components/ui';
+import { Field, inputClass, InlineError, NumberInput, SectionLabel } from '@/components/ui';
 import type { Product, UpdateProductPayload } from '@/lib/api/types';
 
 const schema = z.object({
@@ -29,6 +29,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting, dirtyFields },
@@ -112,25 +113,40 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           </Field>
 
           <Field id="p-price" label="Price (VND)" error={errors.price?.message} required>
-            <input
-              id="p-price"
-              type="number"
-              min={0}
-              step={1000}
-              className={inputClass(!!errors.price)}
-              placeholder="29 990 000"
-              {...register('price')}
+            <Controller
+              name="price"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  id="p-price"
+                  className={inputClass(!!errors.price)}
+                  placeholder="29,990,000"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
             />
           </Field>
 
           <Field id="p-stock" label="Stock" error={errors.stock?.message} required hint="Units on hand">
-            <input
-              id="p-stock"
-              type="number"
-              min={0}
-              className={inputClass(!!errors.stock)}
-              placeholder="100"
-              {...register('stock')}
+            <Controller
+              name="stock"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  id="p-stock"
+                  className={inputClass(!!errors.stock)}
+                  placeholder="100"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
             />
           </Field>
         </div>

@@ -403,18 +403,22 @@ function Sidebar({
       {/* User card / collapse toggle */}
       <div className="border-t border-[var(--color-sidebar-border)] p-3 flex flex-col gap-2">
         {!isCollapsed ? (
-          <div className="flex items-center gap-2.5 p-2 rounded-[var(--radius-md)] bg-white/5">
-            <span className="grid place-items-center w-9 h-9 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex-shrink-0">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-lg)] bg-[var(--color-sidebar-card)] shadow-[inset_0_1px_0_0_oklch(100%_0_0_/_0.06),_inset_0_-1px_0_0_oklch(0%_0_0_/_0.12)]">
+            <span className="grid place-items-center w-9 h-9 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold flex-shrink-0 shadow-[0_0_0_2px_oklch(53%_0.18_252_/_0.35)]">
               {userName?.charAt(0).toUpperCase() ?? 'A'}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold truncate">{userName ?? 'Admin'}</p>
-              <p className="text-xs text-[var(--color-sidebar-muted)] truncate">{userEmail ?? ''}</p>
+              <p className="text-sm font-semibold text-[var(--color-sidebar-foreground)] truncate leading-tight">
+                {userName ?? 'Admin'}
+              </p>
+              <p className="text-xs text-[var(--color-sidebar-muted)] truncate mt-0.5">
+                {userEmail ?? ''}
+              </p>
             </div>
             <button
               type="button"
               onClick={onLogout}
-              className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-sidebar-muted)] hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              className="grid place-items-center w-8 h-8 rounded-[var(--radius-md)] text-[var(--color-sidebar-dim)] hover:text-white hover:bg-[var(--color-promo)]/20 hover:text-[oklch(80%_0.14_27)] transition-colors flex-shrink-0"
               aria-label="Sign out"
               title="Sign out"
             >

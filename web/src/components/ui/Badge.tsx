@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { clsx } from 'clsx';
 
-type BadgeVariant = 'default' | 'success' | 'error' | 'warning' | 'muted';
+type BadgeVariant = 'default' | 'success' | 'error' | 'warning' | 'info' | 'muted';
 
 interface BadgeProps {
   variant?: BadgeVariant;
@@ -13,6 +13,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   success: 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-success)]',
   error:   'bg-[var(--color-error-bg)] text-[var(--color-error)] border-[var(--color-error)]',
   warning: 'bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]',
+  info:    'bg-[var(--color-info-bg)] text-[var(--color-info)] border-[var(--color-info)]',
   muted:   'bg-[var(--color-border-subtle)] text-[var(--color-ink-muted)] border-[var(--color-border-subtle)]',
 };
 

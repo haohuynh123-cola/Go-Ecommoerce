@@ -29,6 +29,12 @@ export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedOption } from './SegmentedControl';
 export { SearchInput } from './SearchInput';
 export { Field, SectionLabel } from './Field';
+export { NumberInput } from './NumberInput';
+export type { NumberInputProps } from './NumberInput';
+
+// ─── Loading / placeholder ────────────────────────────────────────
+export { Skeleton } from './Skeleton';
+export type { SkeletonProps } from './Skeleton';
 
 // ─── Re-exports of existing primitives (unchanged) ───────────────
 export { Button } from './Button';

@@ -24,18 +24,18 @@ interface PageHeaderProps {
  */
 export function PageHeader({ kicker, title, subtitle, actions, className }: PageHeaderProps) {
   return (
-    <header className={`flex flex-wrap items-end justify-between gap-3 ${className ?? ''}`}>
+    <header className={`flex flex-wrap items-end justify-between gap-2 ${className ?? ''}`}>
       <div className="min-w-0">
         {kicker && (
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-brand)]">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-brand)]">
             {kicker}
           </p>
         )}
-        <h1 className="mt-1 text-2xl md:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] leading-tight">
+        <h1 className="mt-0.5 text-lg md:text-xl font-semibold tracking-tight text-[var(--color-ink)] leading-snug">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{subtitle}</p>
+          <p className="mt-0.5 text-xs text-[var(--color-ink-muted)]">{subtitle}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}

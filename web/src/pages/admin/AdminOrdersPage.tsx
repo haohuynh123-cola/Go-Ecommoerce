@@ -22,10 +22,10 @@ import {
   PageLoader,
   SearchInput,
   SegmentedControl,
-  StatCard,
   StatusPill,
 } from '@/components/ui';
-import { IconDownload, IconReceipt } from '@/components/layout/icons';
+import { KpiCard } from '@/components/dashboard';
+import { IconBox, IconDownload, IconReceipt } from '@/components/layout/icons';
 import type { Order } from '@/lib/api/types';
 
 type Filter = 'all' | '7d' | '30d' | '90d';
@@ -86,19 +86,29 @@ export function AdminOrdersPage() {
         }
       />
 
-      {/* Scope notice */}
-      <div className="rounded-[var(--radius-md)] bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
-        <strong>Scope notice:</strong>{' '}
-        <code className="px-1 py-0.5 rounded bg-white/60 font-mono text-xs">GET /orders</code>{' '}
-        returns only the authenticated user's orders. A role-gated admin
-        endpoint will surface store-wide orders here.
-      </div>
-
       {/* Stats strip */}
-      <ul className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-        <StatCard variant="mini" label="Orders" value={String(stats.count)} />
-        <StatCard variant="mini" label="Revenue" value={formatPrice(stats.total)} />
-        <StatCard variant="mini" label="Units sold" value={String(stats.units)} />
+      <ul className="grid gap-3 grid-cols-1 sm:grid-cols-3" aria-label="Order summary">
+        <KpiCard
+          label="Orders"
+          value={String(stats.count)}
+          icon={<IconReceipt />}
+          subtitle="In current view"
+          loading={isLoading}
+        />
+        <KpiCard
+          label="Revenue"
+          value={formatPrice(stats.total)}
+          topRight={<span className="text-sm font-medium tabular-nums">$</span>}
+          subtitle="Sum of selection"
+          loading={isLoading}
+        />
+        <KpiCard
+          label="Units sold"
+          value={String(stats.units)}
+          icon={<IconBox />}
+          subtitle="Across orders"
+          loading={isLoading}
+        />
       </ul>
 
       {/* Toolbar */}
@@ -205,7 +215,7 @@ function OrderRow({ order }: { order: Order }) {
       </td>
       <td className="px-4 py-3 align-middle text-right">
         <Link
-          to={`/orders/${order.id}`}
+          to={`/admin/orders/${order.id}`}
           className="inline-flex items-center gap-1 h-8 px-3 rounded-md text-xs font-semibold text-[var(--color-brand)] hover:bg-[var(--color-brand-subtle)] transition-colors"
           aria-label={`View order #${order.id}`}
         >

@@ -20,6 +20,7 @@ import { AdminProductsPage } from '@/pages/admin/AdminProductsPage';
 import { AdminProductCreatePage } from '@/pages/admin/AdminProductCreatePage';
 import { AdminProductEditPage } from '@/pages/admin/AdminProductEditPage';
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage';
+import { AdminOrderDetailPage } from '@/pages/admin/AdminOrderDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -75,6 +76,7 @@ export const router = createBrowserRouter([
       { path: 'products/new', element: <AdminProductCreatePage /> },
       { path: 'products/:id/edit', element: <AdminProductEditPage /> },
       { path: 'orders', element: <AdminOrdersPage /> },
+      { path: 'orders/:id', element: <AdminOrderDetailPage /> },
     ],
   },
 ]);
