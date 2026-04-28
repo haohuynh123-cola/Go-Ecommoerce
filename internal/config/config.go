@@ -10,6 +10,8 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Server   ServerConfig   `mapstructure:"server"`
 	Log      LogConfig      `mapstructure:"log"`
+	SMTP     SMTPConfig     `mapstructure:"smtp"`
+	Mailtrap MailtrapConfig `mapstructure:"mailtrap"`
 }
 
 type DatabaseConfig struct {
@@ -40,6 +42,17 @@ type LogConfig struct {
 	FilePath string `mapstructure:"file_path"`
 }
 
+type SMTPConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+}
+
+type MailtrapConfig struct {
+	Token string `mapstructure:"token"`
+}
+
 func LoadConfig() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -57,4 +70,16 @@ func LoadConfig() (*Config, error) {
 	err = viper.Unmarshal(&cfg)
 
 	return &cfg, err
+}
+
+func (c *Config) GetJWTSecret() string {
+	return c.JWT.SecretKey
+}
+
+func (c *Config) GetSMTPConfig() SMTPConfig {
+	return c.SMTP
+}
+
+func (c *Config) GetMailtrapConfig() MailtrapConfig {
+	return c.Mailtrap
 }

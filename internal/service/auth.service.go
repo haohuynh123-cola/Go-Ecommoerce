@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/crypto"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
+	"haohuynh123-cola/ecommce/pkg"
 )
 
 type AuthService struct {
@@ -50,7 +52,11 @@ func (as *AuthService) Login(ctx context.Context, req dto.RequestLogin) (*dto.Re
 }
 
 func (as *AuthService) Register(ctx context.Context, req dto.RequestRegister) (*dto.ResponseRegister, error) {
-	//Check Email exist
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	token := cfg.Mailtrap.Token
 	emailExist, err := as.repo.FindUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
@@ -76,6 +82,10 @@ func (as *AuthService) Register(ctx context.Context, req dto.RequestRegister) (*
 	if err != nil {
 		return nil, err
 	}
+	//Send OTP to email
+	otp := crypto.GenerateOTP() // Generate OTP here
+	//Send email with Mailtrap
+	pkg.SendEmail(token, req.Email, otp)
 
 	return &dto.ResponseRegister{
 		ID:    createdUser.ID,

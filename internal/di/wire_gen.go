@@ -7,16 +7,15 @@
 package di
 
 import (
+	"github.com/google/wire"
+	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/handler"
 	"haohuynh123-cola/ecommce/internal/repo"
 	"haohuynh123-cola/ecommce/internal/service"
 	"time"
-
-	"github.com/google/wire"
-	"github.com/jmoiron/sqlx"
-	"github.com/redis/go-redis/v9"
 )
 
 // Injectors from wire.go:

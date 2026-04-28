@@ -7,13 +7,15 @@ type User struct {
 	ID       int64  `db:"id" json:"id"`
 	Name     string `db:"name" json:"name"`
 	Email    string `db:"email" json:"email"`
+	Verify   bool   `db:"verify" json:"verify"`
 	Password string `db:"password" json:"password"`
 }
 
 type MeResult struct {
-	ID    int64  `db:"id" json:"id"`
-	Name  string `db:"name" json:"name"`
-	Email string `db:"email" json:"email"`
+	ID     int64  `db:"id" json:"id"`
+	Name   string `db:"name" json:"name"`
+	Email  string `db:"email" json:"email"`
+	Verify bool   `db:"verify" json:"verify"`
 }
 
 type UserLogin struct {
