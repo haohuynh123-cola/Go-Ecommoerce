@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
 import { login } from '@/lib/api/auth';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
-import { InlineError } from '@/components/ui/ErrorMessage';
+import { AuthSplitLayout } from '@/components/auth/AuthSplitLayout';
+import { Field, inputClass, InlineError, SocialButton, SocialDivider } from '@/components/ui';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -26,6 +26,7 @@ export function LoginPage() {
   const justRegistered = searchParams.get('registered') === '1';
 
   const [serverError, setServerError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -56,71 +57,111 @@ export function LoginPage() {
   }
 
   return (
-    <div
-      className="flex items-start justify-center px-[var(--container-padding)] page-enter"
-      style={{ paddingBlock: '4rem', minHeight: 'calc(100dvh - 3.5rem)' }}
+    <AuthSplitLayout
+      panelKicker="Welcome back"
+      panelTitle="Sign in to keep shopping the latest tech."
+      panelSubtitle="Track orders, save favorites, and get member-only deals on phones, laptops, and accessories."
     >
-      <div className="w-full max-w-[26rem] flex flex-col gap-6">
-        <header className="border-b border-[var(--color-border-subtle)] pb-6">
-          <h1
-            className="text-[length:var(--text-2xl)] tracking-[var(--tracking-tight)] text-[var(--color-ink)] font-[var(--font-weight-normal)] mb-1"
-            style={{ fontFamily: 'var(--font-serif)' }}
+      <header className="flex flex-col gap-1.5">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--color-ink)]">
+          Sign in
+        </h1>
+        <p className="text-sm text-[var(--color-ink-muted)]">
+          Don't have an account?{' '}
+          <Link
+            to="/register"
+            className="font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors"
           >
-            Sign in
-          </h1>
-          <p className="text-[length:var(--text-sm)] text-[var(--color-ink-muted)]">
-            Welcome back.
-          </p>
-        </header>
+            Create one
+          </Link>
+        </p>
+      </header>
 
-        {justRegistered && (
-          <div className="rounded-[var(--radius-sm)] bg-[var(--color-success-bg)] border border-[var(--color-success)] px-3 py-2 text-[length:var(--text-sm)] text-[var(--color-success)]">
-            Account created. Sign in to continue.
-          </div>
-        )}
+      {justRegistered && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-success)] bg-[var(--color-success-bg)] px-4 py-3 text-sm font-medium text-[var(--color-success)]">
+          Account created. Sign in to continue.
+        </div>
+      )}
 
-        {serverError && <InlineError message={serverError} />}
+      {serverError && <InlineError message={serverError} />}
 
-        <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FormField label="Email" id="email" error={errors.email?.message} required>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              hasError={!!errors.email}
-              placeholder="you@example.com"
-              {...register('email')}
-            />
-          </FormField>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Field label="Email" id="email" error={errors.email?.message} required>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            aria-invalid={!!errors.email}
+            className={inputClass(!!errors.email)}
+            {...register('email')}
+          />
+        </Field>
 
-          <FormField label="Password" id="password" error={errors.password?.message} required>
-            <Input
+        <Field
+          label="Password"
+          id="password"
+          error={errors.password?.message}
+          required
+          rightSlot={
+            <Link to="#forgot" className="text-xs font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">
+              Forgot?
+            </Link>
+          }
+        >
+          <div className="relative">
+            <input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
-              hasError={!!errors.password}
-              placeholder="Your password"
+              placeholder="Enter your password"
+              aria-invalid={!!errors.password}
+              className={`${inputClass(!!errors.password)} pr-12`}
               {...register('password')}
             />
-          </FormField>
-
-          <Button type="submit" fullWidth isLoading={isSubmitting} size="lg">
-            Sign in
-          </Button>
-        </form>
-
-        <footer className="pt-4 border-t border-[var(--color-border-subtle)] text-[length:var(--text-sm)] text-[var(--color-ink-muted)] text-center">
-          <p>
-            No account?{' '}
-            <Link
-              to="/register"
-              className="text-[var(--color-ink)] font-[var(--font-weight-medium)] underline underline-offset-[3px] decoration-[1px] hover:opacity-65 transition-opacity"
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 px-2 rounded-md text-xs font-semibold text-[var(--color-ink-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand-subtle)] transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              Register
-            </Link>
-          </p>
-        </footer>
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
+        </Field>
+
+        <label className="inline-flex items-center gap-2 text-sm text-[var(--color-ink-secondary)] cursor-pointer select-none">
+          <input
+            type="checkbox"
+            defaultChecked
+            className="w-4 h-4 rounded border-[var(--color-border-strong)] text-[var(--color-brand)] focus:ring-[var(--color-brand)]"
+          />
+          Keep me signed in for 30 days
+        </label>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-2 h-12 rounded-[var(--radius-md)] bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-bold shadow-[var(--shadow-sm)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+
+      <SocialDivider />
+
+      <div className="grid grid-cols-2 gap-3">
+        <SocialButton label="Google" disabled />
+        <SocialButton label="Apple" disabled />
       </div>
-    </div>
+
+      <p className="mt-2 text-xs text-[var(--color-ink-muted)] text-center">
+        Social sign-in is coming soon. By signing in, you agree to our{' '}
+        <a href="#terms" className="underline hover:text-[var(--color-brand)] transition-colors">Terms</a>{' '}
+        and{' '}
+        <a href="#privacy" className="underline hover:text-[var(--color-brand)] transition-colors">Privacy Policy</a>.
+      </p>
+    </AuthSplitLayout>
   );
 }
+

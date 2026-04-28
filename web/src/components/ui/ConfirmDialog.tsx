@@ -1,4 +1,10 @@
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { clsx } from 'clsx';
+
 import { Button } from './Button';
+
+type Tone = 'danger' | 'brand' | 'warning';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -6,53 +12,97 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Visual tone of the confirm button (default `danger`). */
+  tone?: Tone;
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
+/**
+ * Modal confirmation dialog. Rendered through a portal at `document.body`
+ * so it escapes any ancestor that might create a CSS containing block
+ * (transform/filter/backdrop-filter/will-change). Uses `z-[200]` so the
+ * backdrop sits above admin sidebar (`z-[130]`) and topbar (`z-[120]`).
+ */
 export function ConfirmDialog({
   isOpen,
   title,
   message,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
+  tone = 'danger',
   isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  if (!isOpen) return null;
+  // Lock body scroll + close on Escape while open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) onCancel();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen, isLoading, onCancel]);
 
-  return (
+  if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-ink)]/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] grid place-items-center p-4 bg-black/45 backdrop-blur-sm"
+      style={{ animation: 'fadeIn var(--duration-normal) var(--ease-out)' }}
       role="presentation"
-      onClick={(e) => e.target === e.currentTarget && onCancel()}
+      onClick={(e) => e.target === e.currentTarget && !isLoading && onCancel()}
     >
-      <dialog
-        className="relative bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] w-full max-w-sm p-6 flex flex-col gap-4"
-        open
-        aria-labelledby="dialog-title"
+      <div
+        className="w-full max-w-md rounded-[var(--radius-lg)] bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)] shadow-[var(--shadow-xl)]"
+        style={{ animation: 'slideUp var(--duration-slow) var(--ease-out-expo)' }}
+        role="dialog"
         aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        aria-describedby="confirm-dialog-message"
       >
-        <h2
-          className="font-[var(--font-serif)] text-[length:var(--text-lg)] text-[var(--color-ink)] font-[var(--font-weight-normal)]"
-          id="dialog-title"
+        <header className="px-6 pt-6 pb-2">
+          <h2
+            id="confirm-dialog-title"
+            className="text-lg font-extrabold tracking-tight text-[var(--color-ink)]"
+          >
+            {title}
+          </h2>
+        </header>
+        <p
+          id="confirm-dialog-message"
+          className="px-6 pb-5 text-sm text-[var(--color-ink-secondary)] leading-relaxed"
         >
-          {title}
-        </h2>
-        <p className="text-[length:var(--text-sm)] text-[var(--color-ink-secondary)]">
           {message}
         </p>
-        <div className="flex justify-end gap-3 pt-1">
-          <Button variant="secondary" size="sm" onClick={onCancel} disabled={isLoading}>
+        <footer
+          className={clsx(
+            'flex justify-end gap-2 px-5 py-4 border-t border-[var(--color-border-subtle)]',
+            'bg-[var(--color-surface-muted)] rounded-b-[var(--radius-lg)]',
+          )}
+        >
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={isLoading}>
             {cancelLabel}
           </Button>
-          <Button variant="danger" size="sm" onClick={onConfirm} isLoading={isLoading}>
+          <Button
+            variant={tone === 'brand' ? 'primary' : 'danger'}
+            size="md"
+            onClick={onConfirm}
+            isLoading={isLoading}
+          >
             {confirmLabel}
           </Button>
-        </div>
-      </dialog>
-    </div>
+        </footer>
+      </div>
+    </div>,
+    document.body,
   );
 }

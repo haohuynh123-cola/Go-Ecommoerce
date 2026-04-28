@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/domain"
@@ -23,6 +24,28 @@ func NewCartService(repo domain.CartRepository, rdb *cache.CartCache) domain.Car
 }
 
 func (s *CartService) AddToCart(ctx context.Context, cart *dto.AddToCartRequest) error {
+	//Check Item exist in cart or not
+	cartExist, err := s.repo.GetProductInCart(ctx, cart.UserID, cart.ProductID)
+	if err != nil && !errors.Is(err, domain.ErrCartItemNotFound) {
+		return fmt.Errorf("failed to look up cart item: %w", err)
+	}
+
+	if cartExist != nil {
+		// If the item already exists in the cart, update the quantity
+		cartExist.Quantity += cart.Quantity
+
+		err = s.UpdateCartItem(ctx, &dto.UpdateCartItemRequest{
+			UserID:    cart.UserID,
+			ProductID: cart.ProductID,
+			Quantity:  cartExist.Quantity,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update cart item: %w", err)
+		}
+
+		return nil
+	}
+
 	cartItem := &domain.Cart{
 		UserID:    cart.UserID,
 		ProductID: cart.ProductID,

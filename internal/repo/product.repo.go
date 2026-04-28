@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/helper"
 
@@ -120,28 +120,39 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, id int64, product
 	return product, nil
 }
 
-func (r *ProductRepository) DeleteProduct(ctx context.Context, id int64) error {
+func (r *ProductRepository) DeleteProduct(ctx context.Context, id int64) (bool, error) {
 	// Implement logic to delete a product from the database
 	query := `DELETE FROM products WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
+
 	if err != nil {
-		return err
+		fmt.Printf("Error deleting product: %v\n", err.Error())
+		return false, err
 	}
-	return nil
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	if rowsAffected == 0 {
+		return false, domain.ErrProductNotFound
+	}
+	return true, nil
+
 }
 
-func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (*domain.Product, error) {
+func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (bool, error) {
 	// Implement logic to get a product by SKU from the database
-	query := `SELECT id, name, description, sku, price, stock FROM products WHERE sku = ? LIMIT 1`
-	var product domain.Product
-	err := r.db.GetContext(ctx, &product, query, sku)
+	query := `SELECT sku FROM products WHERE sku = ? LIMIT 1` //select only id to check existence
+	var id int64
+	err := r.db.GetContext(ctx, &id, query, sku)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrProductNotFound
+		if err == sql.ErrNoRows {
+			return false, nil
 		}
-		return nil, err
+		return false, err
 	}
-	return &product, nil
+	return true, nil
 }
 
 func (r *ProductRepository) GetTotalProducts(ctx context.Context) (int64, error) {

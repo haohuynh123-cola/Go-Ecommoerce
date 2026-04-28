@@ -66,6 +66,10 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 	req.UserID = userID
 
 	if err := h.service.AddToCart(c.Request.Context(), &req); err != nil {
+		if err == domain.ErrProductNotFound {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "product not found"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to add item to cart"))
 		return
 	}

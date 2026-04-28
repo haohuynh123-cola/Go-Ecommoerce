@@ -1,23 +1,36 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+
 import { listProducts } from '@/lib/api/products';
-import { addToCart } from '@/lib/api/cart';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useAuth } from '@/hooks/useAuth';
-import { formatPrice } from '@/lib/utils/format';
-import { Pagination } from '@/components/ui/Pagination';
-import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import type { Product } from '@/lib/api/types';
+import {
+  Breadcrumb,
+  EmptyState,
+  ErrorMessage,
+  PageHeader,
+  PageLoader,
+  Pagination,
+  SearchInput,
+} from '@/components/ui';
+import { ProductCard } from '@/components/product/ProductCard';
+import { IconSearch } from '@/components/layout/icons';
 
 const PAGE_SIZE = 12;
+
+const SORT_OPTIONS = [
+  { value: 'relevance', label: 'Most relevant' },
+  { value: 'price_asc', label: 'Price · low → high' },
+  { value: 'price_desc', label: 'Price · high → low' },
+  { value: 'newest', label: 'Newest' },
+] as const;
 
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [nameInput, setNameInput] = useState(searchParams.get('name') ?? '');
   const [skuInput, setSkuInput] = useState(searchParams.get('sku') ?? '');
+  const [sort, setSort] = useState<string>(SORT_OPTIONS[0].value);
   const page = Number(searchParams.get('page') ?? '1');
 
   const name = useDebounce(nameInput, 400);
@@ -34,9 +47,10 @@ export function ProductsPage() {
       next.set('page', String(newPage));
       return next;
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleSearch() {
+  function applyFilters() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (nameInput) next.set('name', nameInput);
@@ -48,48 +62,86 @@ export function ProductsPage() {
     });
   }
 
-  return (
-    <div className="py-12 pb-[var(--space-section)] page-enter">
-      <div className="container">
-        {/* Page header */}
-        <header className="flex items-end justify-between border-b border-[var(--color-border-subtle)] pb-6 mb-10">
-          <div>
-            <p className="kicker">Catalogue</p>
-            <h1 className="page-title">All Products</h1>
-          </div>
-          {data?.pagination && (
-            <p className="text-[length:var(--text-xs)] tracking-[var(--tracking-wide)] uppercase text-[var(--color-ink-muted)] mb-1">
-              {data.pagination.total_items} item
-              {data.pagination.total_items !== 1 ? 's' : ''}
-            </p>
-          )}
-        </header>
+  function clearFilters() {
+    setNameInput('');
+    setSkuInput('');
+    setSearchParams(new URLSearchParams());
+  }
 
-        {/* Search bar */}
-        <div className="flex gap-3 mb-10 flex-wrap">
-          <input
-            className="input flex-1 min-w-[12rem]"
-            type="search"
-            placeholder="Search by name"
+  const hasActiveFilter = Boolean(name || sku);
+  const total = data?.pagination?.total_items ?? 0;
+
+  return (
+    <div className="py-8 md:py-10 page-enter">
+      <div className="container">
+        <Breadcrumb
+          className="mb-5"
+          items={[{ label: 'Home', to: '/' }, { label: 'All products' }]}
+        />
+
+        <PageHeader
+          className="mb-6"
+          title="All products"
+          subtitle={
+            isLoading ? undefined :
+            total > 0
+              ? <>Showing <span className="font-semibold text-[var(--color-ink)]">{total}</span> result{total === 1 ? '' : 's'}{name ? <> for <span className="font-semibold text-[var(--color-ink)]">"{name}"</span></> : null}</>
+              : 'No results.'
+          }
+          actions={
+            <label className="flex items-center gap-2 text-sm text-[var(--color-ink-muted)]">
+              <span>Sort by</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="h-10 px-3 pr-8 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-brand)] focus:shadow-[var(--shadow-focus)] transition cursor-pointer"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </label>
+          }
+        />
+
+        {/* ─── Filter bar ───────────────────────────────────── */}
+        <div className="flex flex-wrap gap-3 items-center mb-8 p-3 bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)]">
+          <SearchInput
+            placeholder="Search by name…"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
             aria-label="Filter by product name"
+            className="flex-1 min-w-[14rem]"
           />
           <input
-            className="input flex-1 min-w-[12rem]"
             type="search"
             placeholder="Filter by SKU"
             value={skuInput}
             onChange={(e) => setSkuInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+            className="w-40 h-10 px-3 rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] border border-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-brand)] focus:bg-[var(--color-surface-raised)] focus:shadow-[var(--shadow-focus)] transition"
             aria-label="Filter by SKU"
           />
-          <button className="btn btn--secondary btn--md" onClick={handleSearch} type="button">
-            Search
+          <button
+            type="button"
+            onClick={applyFilters}
+            className="h-10 px-5 rounded-[var(--radius-md)] bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-semibold transition-colors"
+          >
+            Apply
           </button>
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="h-10 px-3 rounded-[var(--radius-md)] text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-brand)] transition-colors"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
+        {/* ─── States ───────────────────────────────────────── */}
         {isLoading && <PageLoader />}
 
         {isError && (
@@ -102,13 +154,24 @@ export function ProductsPage() {
         {!isLoading && !isError && data && (
           <>
             {data.data.length === 0 ? (
-              <div className="flex flex-col items-center py-16 gap-4 text-[var(--color-ink-muted)] text-[length:var(--text-sm)] tracking-[var(--tracking-wide)] uppercase">
-                <p>No products found.</p>
-              </div>
+              <EmptyState
+                Icon={IconSearch}
+                title="No products found"
+                description="Try adjusting the search term or clearing filters to see more products."
+                actions={hasActiveFilter ? (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="h-10 px-5 rounded-[var(--radius-md)] bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-semibold transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                ) : undefined}
+              />
             ) : (
               <ul
-                className="grid gap-px bg-[var(--color-border-subtle)]"
-                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))' }}
+                className="grid gap-4"
+                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))' }}
                 role="list"
               >
                 {data.data.map((product) => (
@@ -129,96 +192,3 @@ export function ProductsPage() {
   );
 }
 
-interface ProductCardProps {
-  product: Product;
-}
-
-function ProductCard({ product }: ProductCardProps) {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [feedback, setFeedback] = useState<'idle' | 'added' | 'error'>('idle');
-
-  const addMutation = useMutation({
-    mutationFn: () => addToCart(product.id, 1),
-    onSuccess: () => {
-      setFeedback('added');
-      void queryClient.invalidateQueries({ queryKey: ['cart'] });
-      window.setTimeout(() => setFeedback('idle'), 2000);
-    },
-    onError: () => {
-      setFeedback('error');
-      window.setTimeout(() => setFeedback('idle'), 2500);
-    },
-  });
-
-  const isOutOfStock = product.stock === 0;
-
-  function handleAdd(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: `/products/${product.id}` } } });
-      return;
-    }
-    addMutation.mutate();
-  }
-
-  const buttonLabel =
-    feedback === 'added'
-      ? 'Added'
-      : feedback === 'error'
-      ? 'Failed'
-      : addMutation.isPending
-      ? 'Adding…'
-      : 'Add to cart';
-
-  return (
-    <li className="bg-[var(--color-surface)] flex flex-col">
-      <Link
-        to={`/products/${product.id}`}
-        className="flex flex-col flex-1 p-6 no-underline group hover:bg-[var(--color-surface-raised)] transition-colors duration-[var(--duration-normal)]"
-      >
-        <div className="flex-1 flex flex-col gap-2">
-          <p className="text-[length:var(--text-xs)] tracking-[var(--tracking-widest)] uppercase text-[var(--color-ink-muted)]">
-            {product.sku}
-          </p>
-          <h2
-            className="text-[length:var(--text-md)] font-[var(--font-weight-normal)] text-[var(--color-ink)] tracking-[var(--tracking-tight)] group-hover:translate-x-0.5 transition-transform duration-[var(--duration-normal)]"
-            style={{ fontFamily: 'var(--font-serif)' }}
-          >
-            {product.name}
-          </h2>
-          {product.description && (
-            <p className="text-[length:var(--text-sm)] text-[var(--color-ink-muted)] leading-[var(--leading-normal)] line-clamp-2">
-              {product.description}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center justify-between pt-4 mt-4 border-t border-[var(--color-border-subtle)]">
-          <span className="text-[length:var(--text-md)] font-[var(--font-weight-medium)] text-[var(--color-ink)]">
-            {formatPrice(product.price)}
-          </span>
-          <span
-            className={`text-[length:var(--text-xs)] tracking-[var(--tracking-wide)] uppercase ${
-              isOutOfStock ? 'text-[var(--color-error)]' : 'text-[var(--color-success)]'
-            }`}
-          >
-            {isOutOfStock ? 'Out of stock' : `${product.stock} in stock`}
-          </span>
-        </div>
-      </Link>
-      <div className="px-6 pb-6">
-        <button
-          type="button"
-          className="btn btn--secondary btn--sm btn--full"
-          onClick={handleAdd}
-          disabled={isOutOfStock || addMutation.isPending}
-          aria-live="polite"
-        >
-          {buttonLabel}
-        </button>
-      </div>
-    </li>
-  );
-}

@@ -10,7 +10,7 @@ type Cart struct {
 	UserID    int64    `db:"user_id" json:"user_id"`
 	ProductID int64    `db:"product_id" json:"product_id"`
 	Quantity  int      `db:"quantity" json:"quantity"`
-	Product   *Product `json:"product,omitempty"`
+	Product   *Product `json:"product,omitempty" db:"-"`
 }
 
 type CartItem struct {

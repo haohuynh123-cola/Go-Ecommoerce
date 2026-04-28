@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 
@@ -81,15 +82,18 @@ func (r *CartRepository) ClearCart(ctx context.Context, userID int64) error {
 }
 
 func (r *CartRepository) GetProductInCart(ctx context.Context, userID, productID int64) (*domain.Cart, error) {
+
 	query := `SELECT id, user_id, product_id, quantity FROM carts WHERE user_id = ? AND product_id = ?`
 	row := r.DB.QueryRowContext(ctx, query, userID, productID)
 
 	cart := &domain.Cart{}
+
 	if err := row.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.Quantity); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.ErrProductNotFound
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrCartItemNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("get cart item: %w", err)
 	}
+
 	return cart, nil
 }

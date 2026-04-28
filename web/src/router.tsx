@@ -17,6 +17,8 @@ import { OrderDetailPage } from '@/pages/storefront/OrderDetailPage';
 import { AdminLoginPage } from '@/pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
 import { AdminProductsPage } from '@/pages/admin/AdminProductsPage';
+import { AdminProductCreatePage } from '@/pages/admin/AdminProductCreatePage';
+import { AdminProductEditPage } from '@/pages/admin/AdminProductEditPage';
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage';
 
 export const router = createBrowserRouter([
@@ -70,6 +72,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboardPage /> },
       { path: 'products', element: <AdminProductsPage /> },
+      { path: 'products/new', element: <AdminProductCreatePage /> },
+      { path: 'products/:id/edit', element: <AdminProductEditPage /> },
       { path: 'orders', element: <AdminOrdersPage /> },
     ],
   },

@@ -70,12 +70,14 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProdu
 	// Implement logic to create a new product
 	// Check if SKU already exists
 	existingProduct, err := s.repo.GetProductBySKU(ctx, req.SKU)
+
 	if err != nil {
 		return nil, err
 	}
-	if existingProduct != nil {
+	if existingProduct {
 		return nil, domain.ErrSKUAlreadyExists
 	}
+
 	// Convert CreateProductRequest to Product domain model
 	product := &domain.Product{
 		Name:        req.Name,
@@ -119,20 +121,26 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id int64, req *dto.U
 	// Implement logic to update an existing product
 }
 
-func (s *ProductService) DeleteProduct(ctx context.Context, id int64) error {
+func (s *ProductService) DeleteProduct(ctx context.Context, id int64) (bool, error) {
 	// Implement logic to delete a product
 	// Check if product exists
+	// Check Product exists Cart before delete
+	// Check Product exists Order before delete
+
 	existingProduct, err := s.repo.GetProductByID(ctx, id)
 	if err != nil {
-		return err
+		if err == domain.ErrProductNotFound {
+			return false, nil
+		}
+		return false, err
 	}
 	if existingProduct == nil {
-		return domain.ErrProductNotFound
+		return false, domain.ErrProductNotFound
 	}
 
-	err = s.repo.DeleteProduct(ctx, id)
+	deleted, err := s.repo.DeleteProduct(ctx, id)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return deleted, nil
 }

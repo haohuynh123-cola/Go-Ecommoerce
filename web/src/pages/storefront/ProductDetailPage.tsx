@@ -1,24 +1,44 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { getProduct } from '@/lib/api/products';
 import { addToCart } from '@/lib/api/cart';
 import { formatPrice } from '@/lib/utils/format';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { ErrorMessage, InlineError } from '@/components/ui/ErrorMessage';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  getProductBadgeMock,
+  getProductPlaceholderGradient,
+  getProductPromoMock,
+  getProductRatingMock,
+} from '@/lib/utils/product';
+import { Breadcrumb, ErrorMessage, InlineError, PageLoader } from '@/components/ui';
+import {
+  IconHeadset,
+  IconRefresh,
+  IconShield,
+  IconTruck,
+} from '@/components/layout/icons';
+import type { Product } from '@/lib/api/types';
+
+const TRUST_ITEMS = [
+  { Icon: IconTruck,   title: 'Free shipping',   sub: 'On orders over $99' },
+  { Icon: IconRefresh, title: '30-day returns',  sub: 'No questions asked' },
+  { Icon: IconShield,  title: '2-year warranty', sub: 'Manufacturer-backed' },
+  { Icon: IconHeadset, title: '24/7 support',    sub: 'Expert help any time' },
+];
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const productId = Number(id);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState('');
   const [addSuccess, setAddSuccess] = useState(false);
+  const [activeThumb, setActiveThumb] = useState(0);
 
   const { data: product, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['product', productId],
@@ -43,7 +63,7 @@ export function ProductDetailPage() {
 
   if (isError || !product) {
     return (
-      <div className="container" style={{ paddingBlock: 'var(--spacing-12)' }}>
+      <div className="container py-12">
         <ErrorMessage
           message={(error as Error)?.message ?? 'Product not found.'}
           onRetry={() => refetch()}
@@ -52,107 +72,303 @@ export function ProductDetailPage() {
     );
   }
 
+  const promo = getProductPromoMock(product);
+  const rating = getProductRatingMock(product);
+  const tag = getProductBadgeMock(product);
   const isOutOfStock = product.stock === 0;
+  const stepperDisabled = isOutOfStock || addMutation.isPending;
+
+  function handleQtyChange(delta: number) {
+    setQuantity((q) => {
+      if (!product) return q;
+      const next = Math.max(1, Math.min(product.stock, q + delta));
+      return next;
+    });
+  }
+
+  async function handleBuyNow() {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/products/${productId}` } } });
+      return;
+    }
+    try {
+      await addMutation.mutateAsync();
+      navigate('/cart');
+    } catch {
+      /* error already surfaced via state */
+    }
+  }
+
+  function handleAdd() {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/products/${productId}` } } });
+      return;
+    }
+    addMutation.mutate();
+  }
 
   return (
-    <div className="py-12 pb-[var(--space-section)] page-enter">
+    <div className="py-8 md:py-10 page-enter">
       <div className="container">
-        {/* Breadcrumb */}
-        <nav
-          className="flex items-center gap-2 mb-8 text-[length:var(--text-xs)] tracking-[var(--tracking-wide)] uppercase"
-          aria-label="Breadcrumb"
-        >
-          <Link
-            to="/"
-            className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
-          >
-            Products
-          </Link>
-          <span className="text-[var(--color-border)]" aria-hidden="true">/</span>
-          <span className="text-[var(--color-ink)]">{product.name}</span>
-        </nav>
+        <Breadcrumb
+          className="mb-6"
+          items={[
+            { label: 'Home',     to: '/' },
+            { label: 'Products', to: '/' },
+            { label: product.name },
+          ]}
+        />
 
-        <article
-          className="grid gap-12 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-8 shadow-[var(--shadow-sm)]"
-          style={{ gridTemplateColumns: '1fr auto' }}
-        >
-          {/* Info */}
-          <div className="flex flex-col gap-6">
-            <header>
-              <p className="kicker">{product.sku}</p>
-              <h1
-                className="text-[length:var(--text-3xl)] tracking-[var(--tracking-tight)] text-[var(--color-ink)] font-[var(--font-weight-normal)]"
-                style={{ fontFamily: 'var(--font-serif)' }}
-              >
-                {product.name}
-              </h1>
-            </header>
+        {/* ─── Main two-column layout ───────────────────────── */}
+        <div className="grid gap-8 lg:gap-12 lg:grid-cols-12">
+          {/* ─── Gallery ───────────────────────────────────── */}
+          <ProductGallery product={product} activeThumb={activeThumb} onSelect={setActiveThumb} />
 
-            <p
-              className="text-[length:var(--text-2xl)] font-[var(--font-weight-semibold)] text-[var(--color-ink)] tracking-[var(--tracking-tight)]"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              {formatPrice(product.price)}
-            </p>
-
-            <p className="text-[length:var(--text-md)] text-[var(--color-ink-secondary)] leading-[var(--leading-normal)] max-w-[60ch]">
-              {product.description}
-            </p>
-
-            <div>
-              <Badge variant={isOutOfStock ? 'error' : 'success'}>
-                {isOutOfStock ? 'Out of stock' : `${product.stock} in stock`}
-              </Badge>
+          {/* ─── Info column ───────────────────────────────── */}
+          <div className="lg:col-span-7 flex flex-col gap-5">
+            {/* Tag row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {promo && (
+                <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--color-promo)] text-white text-[11px] font-bold tracking-wide">
+                  -{promo.discountPct}% Sale
+                </span>
+              )}
+              {tag === 'bestseller' && (
+                <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border border-[var(--color-warning-border)] text-[11px] font-bold tracking-wide">
+                  ★ Best seller
+                </span>
+              )}
+              {tag === 'new' && (
+                <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border border-[var(--color-brand)] text-[11px] font-bold tracking-wide">
+                  NEW
+                </span>
+              )}
+              <span className="ml-auto text-xs text-[var(--color-ink-muted)] font-mono">{product.sku}</span>
             </div>
-          </div>
 
-          {/* Add to cart */}
-          <div className="flex flex-col gap-4 min-w-[16rem]">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] leading-tight">
+              {product.name}
+            </h1>
+
+            {/* Rating row */}
+            <div className="flex items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1 text-[var(--color-warning)]">
+                <span aria-hidden>★★★★★</span>
+              </span>
+              <span className="font-semibold text-[var(--color-ink)]">{rating.score.toFixed(1)}</span>
+              <span className="text-[var(--color-ink-muted)]">({rating.reviews} reviews)</span>
+              <span aria-hidden className="text-[var(--color-border)]">|</span>
+              <span className={isOutOfStock ? 'text-[var(--color-error)] font-semibold' : 'text-[var(--color-success)] font-semibold'}>
+                {isOutOfStock ? 'Out of stock' : `${product.stock} in stock`}
+              </span>
+            </div>
+
+            {/* ─── Price card ──────────────────────────────── */}
+            <div className="rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-promo-subtle)] to-[var(--color-brand-subtle)] p-5">
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="text-3xl md:text-4xl font-extrabold text-[var(--color-promo)]">
+                  {formatPrice(product.price)}
+                </span>
+                {promo && (
+                  <>
+                    <span className="text-base text-[var(--color-ink-muted)] line-through">
+                      {formatPrice(promo.originalPrice)}
+                    </span>
+                    <span className="inline-flex items-center h-6 px-2 rounded-md bg-[var(--color-promo)] text-white text-xs font-bold">
+                      -{promo.discountPct}%
+                    </span>
+                  </>
+                )}
+              </div>
+              {promo && (
+                <p className="mt-1.5 text-sm text-[var(--color-success)] font-semibold">
+                  You save {formatPrice(promo.originalPrice - product.price)}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-white text-[var(--color-brand)] text-xs font-semibold border border-[var(--color-brand)]/30">
+                  Trả góp 0%
+                </span>
+                <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-white text-[var(--color-ink-secondary)] text-xs font-semibold border border-[var(--color-border)]">
+                  Giao hàng nhanh
+                </span>
+                <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-white text-[var(--color-ink-secondary)] text-xs font-semibold border border-[var(--color-border)]">
+                  Bảo hành 24 tháng
+                </span>
+              </div>
+            </div>
+
+            {/* ─── Quantity + CTA ─────────────────────────── */}
             {isAuthenticated ? (
-              <>
-                <label
-                  htmlFor="quantity"
-                  className="text-[length:var(--text-xs)] tracking-[var(--tracking-wide)] uppercase text-[var(--color-ink-muted)]"
-                >
+              <div className="flex flex-col gap-3">
+                <label className="text-xs font-semibold uppercase tracking-widest text-[var(--color-ink-muted)]">
                   Quantity
                 </label>
-                <div className="flex gap-3">
-                  <input
-                    id="quantity"
-                    type="number"
-                    className="input w-20 text-center"
-                    min={1}
-                    max={product.stock}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-                    disabled={isOutOfStock}
-                  />
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => addMutation.mutate()}
-                    isLoading={addMutation.isPending}
-                    disabled={isOutOfStock}
+                <div className="flex items-stretch gap-3">
+                  <div className="flex items-stretch h-12 rounded-[var(--radius-md)] border border-[var(--color-border)] overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleQtyChange(-1)}
+                      disabled={stepperDisabled || quantity <= 1}
+                      className="w-11 grid place-items-center text-[var(--color-ink)] hover:bg-[var(--color-brand-subtle)] hover:text-[var(--color-brand)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={product.stock}
+                      value={quantity}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        if (Number.isNaN(v)) return;
+                        setQuantity(Math.max(1, Math.min(product.stock, v)));
+                      }}
+                      disabled={stepperDisabled}
+                      className="w-14 text-center bg-transparent text-base font-bold text-[var(--color-ink)] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      aria-label="Quantity"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleQtyChange(1)}
+                      disabled={stepperDisabled || quantity >= product.stock}
+                      className="w-11 grid place-items-center text-[var(--color-ink)] hover:bg-[var(--color-brand-subtle)] hover:text-[var(--color-brand)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAdd}
+                    disabled={stepperDisabled}
+                    className="flex-1 h-12 px-5 rounded-[var(--radius-md)] bg-[var(--color-surface)] border-2 border-[var(--color-brand)] text-[var(--color-brand)] text-sm font-bold hover:bg-[var(--color-brand-subtle)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {addSuccess ? 'Added' : 'Add to cart'}
-                  </Button>
+                    {addSuccess ? 'Added ✓' : addMutation.isPending ? 'Adding…' : 'Add to cart'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    disabled={stepperDisabled}
+                    className="flex-1 h-12 px-5 rounded-[var(--radius-md)] bg-[var(--color-promo)] text-white text-sm font-bold hover:bg-[var(--color-promo-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[var(--shadow-sm)]"
+                  >
+                    Buy now
+                  </button>
                 </div>
                 {addError && <InlineError message={addError} />}
-              </>
+              </div>
             ) : (
-              <p className="text-[length:var(--text-sm)] text-[var(--color-ink-muted)]">
-                <Link
-                  to="/login"
-                  className="text-[var(--color-ink)] underline underline-offset-[3px] decoration-[1px] hover:opacity-65 transition-opacity"
-                >
-                  Sign in
-                </Link>{' '}
-                to add this item to your cart.
-              </p>
+              <div className="rounded-[var(--radius-md)] bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] p-4">
+                <p className="text-sm text-[var(--color-warning-text)]">
+                  <Link
+                    to="/login"
+                    state={{ from: { pathname: `/products/${productId}` } }}
+                    className="font-bold underline underline-offset-2 hover:opacity-80"
+                  >
+                    Sign in
+                  </Link>{' '}
+                  to add this item to your cart.
+                </p>
+              </div>
             )}
+
+            {/* ─── Trust strip ────────────────────────────── */}
+            <ul className="grid grid-cols-2 gap-3 mt-2">
+              {TRUST_ITEMS.map(({ Icon, title, sub }) => (
+                <li
+                  key={title}
+                  className="flex items-center gap-3 p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border-subtle)]"
+                >
+                  <div className="grid place-items-center w-9 h-9 rounded-full bg-[var(--color-brand-subtle)] text-[var(--color-brand)] flex-shrink-0">
+                    <Icon width={18} height={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{title}</p>
+                    <p className="text-xs text-[var(--color-ink-muted)] truncate">{sub}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        </article>
+        </div>
+
+        {/* ─── Description ───────────────────────────────────── */}
+        <section className="mt-12 rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border-subtle)] p-6 md:p-8">
+          <h2 className="text-lg md:text-xl font-bold text-[var(--color-ink)] tracking-tight">
+            Product description
+          </h2>
+          <hr className="mt-3 mb-5 border-t border-[var(--color-border-subtle)]" />
+          <p className="text-sm md:text-base text-[var(--color-ink-secondary)] leading-relaxed whitespace-pre-line max-w-prose">
+            {product.description || 'No description available for this product.'}
+          </p>
+        </section>
       </div>
+    </div>
+  );
+}
+
+interface ProductGalleryProps {
+  product: Product;
+  activeThumb: number;
+  onSelect: (i: number) => void;
+}
+
+function ProductGallery({ product, activeThumb, onSelect }: ProductGalleryProps) {
+  const gradient = getProductPlaceholderGradient(product);
+  const letter = product.name.charAt(0).toUpperCase();
+
+  // Each "view" is the same gradient with a slightly rotated hue, just for thumbnail variety.
+  const thumbs = [0, 1, 2, 3];
+
+  return (
+    <div className="lg:col-span-5">
+      {/* Main image */}
+      <div className="relative aspect-square rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-muted)] border border-[var(--color-border-subtle)]">
+        <div
+          aria-hidden
+          className="absolute inset-0 transition-all duration-[var(--duration-slow)]"
+          style={{
+            background: gradient,
+            transform: `rotate(${activeThumb * 4}deg) scale(1.05)`,
+            filter: `hue-rotate(${activeThumb * 12}deg)`,
+          }}
+        />
+        <span
+          aria-hidden
+          className="absolute inset-0 grid place-items-center text-white/95 text-[10rem] font-extrabold tracking-tight drop-shadow-lg select-none"
+        >
+          {letter}
+        </span>
+      </div>
+
+      {/* Thumbnails */}
+      <ul className="mt-3 grid grid-cols-4 gap-2">
+        {thumbs.map((i) => (
+          <li key={i}>
+            <button
+              type="button"
+              onClick={() => onSelect(i)}
+              className={`block w-full aspect-square rounded-[var(--radius-md)] overflow-hidden border-2 transition-colors ${
+                activeThumb === i
+                  ? 'border-[var(--color-brand)]'
+                  : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)]'
+              }`}
+              aria-label={`View ${i + 1}`}
+              aria-pressed={activeThumb === i}
+            >
+              <span
+                aria-hidden
+                className="block w-full h-full"
+                style={{
+                  background: gradient,
+                  filter: `hue-rotate(${i * 12}deg) brightness(${i === activeThumb ? 1 : 0.92})`,
+                }}
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

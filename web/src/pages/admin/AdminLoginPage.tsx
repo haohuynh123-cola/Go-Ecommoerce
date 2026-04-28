@@ -10,14 +10,15 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
 import { login } from '@/lib/api/auth';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
-import { InlineError } from '@/components/ui/ErrorMessage';
+import { AuthSplitLayout } from '@/components/auth/AuthSplitLayout';
+import { Field, inputClass, InlineError } from '@/components/ui';
+import { IconShield } from '@/components/layout/icons';
 
 const schema = z.object({
-  email: z.string().email('Enter a valid email'),
+  email:    z.string().email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -57,63 +58,69 @@ export function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--color-sidebar)] flex items-center justify-center p-8">
-      <div className="w-full max-w-sm bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-8 flex flex-col gap-6">
-        <header className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-2 mb-4">
-            <span
-              className="text-[length:var(--text-lg)] tracking-[var(--tracking-tight)] text-[var(--color-ink)] font-[var(--font-weight-normal)]"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              Ecomm
-            </span>
-            <span
-              className="text-[length:var(--text-xs)] tracking-[var(--tracking-widest)] uppercase text-[var(--color-ink-muted)] px-[0.5em] py-[0.15em] border border-[var(--color-border)] rounded-[var(--radius-sm)]"
-            >
-              Admin
-            </span>
-          </div>
-          <h1
-            className="text-[length:var(--text-xl)] tracking-[var(--tracking-tight)] text-[var(--color-ink)] font-[var(--font-weight-normal)]"
-            style={{ fontFamily: 'var(--font-serif)' }}
-          >
-            Sign in to Admin
-          </h1>
-          <p className="text-[length:var(--text-xs)] text-[var(--color-ink-muted)]">
-            Any registered account can access the admin panel.
-            {/* TODO: Restrict to admin role when backend adds role system */}
-          </p>
-        </header>
+    <AuthSplitLayout
+      fullBleed
+      variant="admin"
+      panelKicker="Admin console"
+      panelTitle="Manage your store with confidence."
+      panelSubtitle="Live order tracking, instant inventory updates, and detailed analytics — all in a single dashboard."
+    >
+      <header className="flex flex-col gap-2.5">
+        <span className="inline-flex items-center gap-2 self-start h-7 px-3 rounded-full bg-[var(--color-brand-subtle)] text-[var(--color-brand)] text-[11px] font-bold uppercase tracking-widest">
+          <IconShield width={13} height={13} />
+          Restricted area
+        </span>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--color-ink)]">
+          Sign in to Admin
+        </h1>
+        <p className="text-sm text-[var(--color-ink-muted)]">
+          {/* TODO: Restrict to admin role when backend adds role system */}
+          Any registered account currently has access. Role-based permissions
+          land in a future release.
+        </p>
+      </header>
 
-        {serverError && <InlineError message={serverError} />}
+      {serverError && <InlineError message={serverError} />}
 
-        <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FormField label="Email" id="adm-email" error={errors.email?.message} required>
-            <Input
-              id="adm-email"
-              type="email"
-              autoComplete="email"
-              hasError={!!errors.email}
-              placeholder="you@example.com"
-              {...register('email')}
-            />
-          </FormField>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Field id="adm-email" label="Email" required error={errors.email?.message}>
+          <input
+            id="adm-email"
+            type="email"
+            autoComplete="email"
+            placeholder="admin@example.com"
+            aria-invalid={!!errors.email}
+            className={inputClass(!!errors.email)}
+            {...register('email')}
+          />
+        </Field>
+        <Field id="adm-password" label="Password" required error={errors.password?.message}>
+          <input
+            id="adm-password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            aria-invalid={!!errors.password}
+            className={inputClass(!!errors.password)}
+            {...register('password')}
+          />
+        </Field>
 
-          <FormField label="Password" id="adm-password" error={errors.password?.message} required>
-            <Input
-              id="adm-password"
-              type="password"
-              autoComplete="current-password"
-              hasError={!!errors.password}
-              {...register('password')}
-            />
-          </FormField>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-2 h-12 rounded-[var(--radius-md)] bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-bold shadow-[var(--shadow-sm)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSubmitting ? 'Signing in…' : 'Sign in to admin'}
+        </button>
+      </form>
 
-          <Button type="submit" fullWidth isLoading={isSubmitting} size="lg">
-            Sign in
-          </Button>
-        </form>
-      </div>
-    </div>
+      <p className="text-xs text-[var(--color-ink-muted)] text-center">
+        Need a regular account?{' '}
+        <a href="/" className="font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">
+          Go to storefront
+        </a>
+      </p>
+    </AuthSplitLayout>
   );
 }

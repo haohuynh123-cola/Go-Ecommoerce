@@ -25,7 +25,7 @@ type ProductService interface {
 	CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*Product, error)
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	UpdateProduct(ctx context.Context, id int64, req *dto.UpdateProductRequest) (*Product, error)
-	DeleteProduct(ctx context.Context, id int64) error
+	DeleteProduct(ctx context.Context, id int64) (bool, error)
 	ListProducts(ctx context.Context, req dto.ProductFilter) ([]*Product, int64, error)
 }
 
@@ -34,9 +34,9 @@ type ProductRepository interface {
 	GetProductByID(ctx context.Context, id int64) (*Product, error)
 	GetProductByIDs(ctx context.Context, ids []int64) ([]*Product, error)
 	UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error)
-	DeleteProduct(ctx context.Context, id int64) error
+	DeleteProduct(ctx context.Context, id int64) (bool, error)
 	ListProducts(ctx context.Context, req ProductFilter) ([]*Product, error)
-	GetProductBySKU(ctx context.Context, sku string) (*Product, error)
+	GetProductBySKU(ctx context.Context, sku string) (bool, error)
 	GetTotalProducts(ctx context.Context) (int64, error)
 }
 

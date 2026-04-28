@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"haohuynh123-cola/ecommce/pkg"
@@ -179,9 +180,9 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	err = h.productService.DeleteProduct(c.Request.Context(), int64(id))
+	_, err = h.productService.DeleteProduct(c.Request.Context(), int64(id))
 	if err != nil {
-		if err == domain.ErrProductNotFound {
+		if errors.Is(err, domain.ErrProductNotFound) {
 			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "product not found"))
 			return
 		}
