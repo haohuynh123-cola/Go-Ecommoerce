@@ -3,16 +3,17 @@ package domain
 import "errors"
 
 var (
-	ErrUnauthorized       = errors.New("unauthorized")
-	ErrForbidden          = errors.New("forbidden")
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrTokenInvalid       = errors.New("invalid token")
-	ErrSKUAlreadyExists   = errors.New("SKU already exists")
-	ErrProductNotFound    = errors.New("product not found")
-	ErrOrderNotFound      = errors.New("order not found")
-	ErrCartItemNotFound   = errors.New("cart item not found")
+	ErrUnauthorized        = errors.New("unauthorized")
+	ErrForbidden           = errors.New("forbidden")
+	ErrEmailAlreadyExists  = errors.New("email already exists")
+	ErrInvalidCredentials  = errors.New("invalid credentials")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrTokenInvalid        = errors.New("invalid token")
+	ErrSKUAlreadyExists    = errors.New("SKU already exists")
+	ErrProductNotFound     = errors.New("product not found")
+	ErrOrderNotFound       = errors.New("order not found")
+	ErrCartItemNotFound    = errors.New("cart item not found")
+	ErrInvalidOrderStatus  = errors.New("invalid order status")
 
 	ErrCodeInternal           = "internal_error"
 	ErrCodeUnauthorized       = "unauthorized"

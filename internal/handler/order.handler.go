@@ -31,6 +31,8 @@ func (h *OrderHandler) RegisterRoutes(r *gin.Engine) {
 	orderGroup.POST("/", h.CreateOrder)
 	orderGroup.GET("/", h.GetOrdersByUserID)
 	orderGroup.GET("/:id", h.GetOrderByID)
+	orderGroup.PATCH("/:id/status", h.UpdateOrderStatus)
+	orderGroup.GET("/:id/activities", h.GetOrderActivities)
 }
 
 // CreateOrder handles the creation of a new order
@@ -149,4 +151,83 @@ func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pkg.SuccessResponse(order))
+}
+
+// UpdateOrderStatus handles updating the status of an existing order
+// @Summary Update order status
+// @Description Update the status of an order. Valid values: Created, Confirmed, Shipping, Delivered, Cancelled
+// @Tags Orders
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Param status body dto.UpdateOrderStatusRequest true "New status"
+// @security     BearerAuth
+// @Success 200 {object} pkg.SuccessResponseSwag{data=dto.GetOrderByIDResponse}
+// @Failure 400 {object} pkg.ErrorResponseSwag
+// @Failure 401 {object} pkg.ErrorResponseSwag
+// @Failure 404 {object} pkg.ErrorResponseSwag
+// @Failure 500 {object} pkg.ErrorResponseSwag
+// @Router /orders/{id}/status [patch]
+func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
+	orderID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "invalid order ID"))
+		return
+	}
+
+	var req dto.UpdateOrderStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, err.Error()))
+		return
+	}
+
+	order, err := h.service.UpdateOrderStatus(c.Request.Context(), orderID, req.Status)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidOrderStatus) {
+			c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "status must be one of: Created, Confirmed, Shipping, Delivered, Cancelled"))
+			return
+		}
+		if errors.Is(err, domain.ErrOrderNotFound) {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeOrderNotFound, "order not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to update order status"))
+		return
+	}
+
+	c.JSON(http.StatusOK, pkg.SuccessResponse(order))
+}
+
+// GetOrderActivities handles retrieving activity history for an order
+// @Summary Get order activities
+// @Description Retrieve all activity records for the specified order
+// @Tags Orders
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @security     BearerAuth
+// @Success 200 {object} pkg.SuccessResponseSwag{data=[]dto.OrderActivityResponse}
+// @Failure 400 {object} pkg.ErrorResponseSwag
+// @Failure 401 {object} pkg.ErrorResponseSwag
+// @Failure 404 {object} pkg.ErrorResponseSwag
+// @Failure 500 {object} pkg.ErrorResponseSwag
+// @Router /orders/{id}/activities [get]
+func (h *OrderHandler) GetOrderActivities(c *gin.Context) {
+	orderID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, pkg.ErrorResponse(domain.ErrCodeInvalidRequest, "invalid order ID"))
+		return
+	}
+
+	activities, err := h.service.GetActivitiesByOrderID(c.Request.Context(), orderID)
+	if err != nil {
+		if errors.Is(err, domain.ErrOrderNotFound) {
+			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeOrderNotFound, "order not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "failed to retrieve order activities"))
+		return
+	}
+
+	c.JSON(http.StatusOK, pkg.SuccessResponse(activities))
 }

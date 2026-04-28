@@ -36,6 +36,12 @@ type GetOrderByIDResponse struct {
 	UserID      int64                   `json:"user_id"`
 	OrderDate   time.Time               `json:"order_date,omitempty"`
 	TotalAmount float64                 `json:"total_amount"`
+	Status      string                  `json:"status"`
 	Items       []OrderItemResponse     `json:"items"`
 	Activities  []OrderActivityResponse `json:"activities,omitempty"`
+}
+
+// UpdateOrderStatusRequest is the request body for PATCH /orders/:id/status.
+type UpdateOrderStatusRequest struct {
+	Status string `json:"status" binding:"required"`
 }

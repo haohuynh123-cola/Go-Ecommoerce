@@ -230,6 +230,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Ge
 		UserID:      order.UserID,
 		OrderDate:   order.OrderDate,
 		TotalAmount: order.TotalAmount,
+		Status:      order.Status,
 		Items:       items,
 		Activities:  activities,
 	}
@@ -238,6 +239,41 @@ func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*dto.Ge
 	}
 
 	return cacheData, nil
+}
+
+// UpdateOrderStatus validates the new status, writes the status change and a
+// matching activity record atomically, invalidates the order cache, then
+// returns the refreshed order detail.
+func (s *OrderService) UpdateOrderStatus(ctx context.Context, orderID int64, newStatus string) (*dto.GetOrderByIDResponse, error) {
+	if !domain.IsValidOrderStatus(newStatus) {
+		return nil, domain.ErrInvalidOrderStatus
+	}
+
+	order, err := s.repo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	activity := &domain.OrderActivity{
+		OrderID:      orderID,
+		ActivityType: "status_changed",
+		Description:  fmt.Sprintf("Status changed to %s", newStatus),
+		ActivityAt:   time.Now(),
+	}
+
+	if err := s.repo.UpdateOrderStatusWithActivity(ctx, orderID, newStatus, activity); err != nil {
+		return nil, fmt.Errorf("update order status with activity: %w", err)
+	}
+
+	// Invalidate the cached order so the next read reflects the new status.
+	if err := s.rdb.DeleteOrder(ctx, orderID); err != nil {
+		fmt.Printf("failed to invalidate cache for order %d: %v\n", orderID, err)
+	}
+
+	// Return the updated order detail — re-use GetOrderByID to build the full
+	// response including items and activities rather than duplicating that logic.
+	_ = order // order was fetched only to confirm existence; GetOrderByID re-fetches it.
+	return s.GetOrderByID(ctx, orderID)
 }
 
 func (s *OrderService) GetActivitiesByOrderID(ctx context.Context, orderID int64) ([]*dto.OrderActivityResponse, error) {
