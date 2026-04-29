@@ -2,22 +2,29 @@ package service
 
 import (
 	"context"
+	"haohuynh123-cola/ecommce/internal/cache"
 	"haohuynh123-cola/ecommce/internal/config"
 	"haohuynh123-cola/ecommce/internal/crypto"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"haohuynh123-cola/ecommce/pkg"
+	"log"
+	"time"
 )
 
 type AuthService struct {
 	repo      domain.IUserRepository
 	secretKey string
+	rdb       *cache.UserCache
+	smtp      config.SMTPConfig
 }
 
-func NewAuthService(repository domain.IUserRepository, secretKey string) domain.IAuthService {
+func NewAuthService(repository domain.IUserRepository, secretKey string, rdb *cache.UserCache, smtp config.SMTPConfig) domain.IAuthService {
 	return &AuthService{
 		repo:      repository,
 		secretKey: secretKey,
+		rdb:       rdb,
+		smtp:      smtp,
 	}
 }
 
@@ -52,11 +59,6 @@ func (as *AuthService) Login(ctx context.Context, req dto.RequestLogin) (*dto.Re
 }
 
 func (as *AuthService) Register(ctx context.Context, req dto.RequestRegister) (*dto.ResponseRegister, error) {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-	token := cfg.Mailtrap.Token
 	emailExist, err := as.repo.FindUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
@@ -82,10 +84,23 @@ func (as *AuthService) Register(ctx context.Context, req dto.RequestRegister) (*
 	if err != nil {
 		return nil, err
 	}
-	//Send OTP to email
-	otp := crypto.GenerateOTP() // Generate OTP here
-	//Send email with Mailtrap
-	pkg.SendEmail(token, req.Email, otp)
+	otp := crypto.GenerateOTP()
+
+	if err := as.rdb.SetOTPRegister(ctx, req.Email, otp, 5*time.Minute); err != nil {
+		return nil, err
+	}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered from panic in send email: %v", r)
+			}
+		}()
+
+		if err := pkg.SendEmail(as.smtp, req.Email, otp); err != nil {
+			log.Printf("Failed to send OTP email: %v", err)
+		}
+	}()
 
 	return &dto.ResponseRegister{
 		ID:    createdUser.ID,
@@ -110,4 +125,30 @@ func (as *AuthService) GetMe(ctx context.Context, userID int64) (*dto.ResponseMe
 		Name:  user.Name,
 		Email: user.Email,
 	}, nil
+}
+
+func (as *AuthService) VerifyOTP(ctx context.Context, req dto.RequestVerifyOTP) (bool, error) {
+	//Get OTP from cache
+	cachedOTP, found, err := as.rdb.GetOTPRegister(ctx, req.Email)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, domain.ErrOTPExpired
+	}
+	if cachedOTP != req.OTP {
+		return false, domain.ErrInvalidOTP
+	}
+
+	// Mark user as verified in the database
+	if err := as.repo.VerifyUserByEmail(ctx, req.Email, true); err != nil {
+		return false, err
+	}
+
+	// Clear OTP after successful verification
+	if err := as.rdb.ClearOTPRegister(ctx, req.Email); err != nil {
+		log.Printf("Failed to clear OTP from cache: %v", err)
+	}
+
+	return true, nil
 }

@@ -31,6 +31,7 @@ export { SearchInput } from './SearchInput';
 export { Field, SectionLabel } from './Field';
 export { NumberInput } from './NumberInput';
 export type { NumberInputProps } from './NumberInput';
+export { OtpInput } from './OtpInput';
 
 // ─── Loading / placeholder ────────────────────────────────────────
 export { Skeleton } from './Skeleton';

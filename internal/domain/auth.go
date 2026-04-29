@@ -9,4 +9,5 @@ type IAuthService interface {
 	Login(ctx context.Context, req dto.RequestLogin) (*dto.ResponseLogin, error)
 	Register(ctx context.Context, req dto.RequestRegister) (*dto.ResponseRegister, error)
 	GetMe(ctx context.Context, userID int64) (*dto.ResponseMe, error)
+	VerifyOTP(ctx context.Context, req dto.RequestVerifyOTP) (bool, error)
 }

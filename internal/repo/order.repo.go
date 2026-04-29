@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"haohuynh123-cola/ecommce/internal/domain"
 
@@ -48,7 +49,7 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 	query := `SELECT id, user_id, order_date, total_amount, status FROM orders WHERE user_id = ?`
 	rows, err := r.db.QueryxContext(ctx, query, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrOrderNotFound
 		}
 		return nil, err
@@ -65,29 +66,31 @@ func (r *OrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) (
 		orders = append(orders, &order)
 	}
 
-	//params include:order_items
-	orderIDs := make([]int64, 0, len(orders))
-	for _, o := range orders {
-		orderIDs = append(orderIDs, o.ID)
-	}
+	if len(orders) > 0 {
+		//params include:order_items
+		orderIDs := make([]int64, 0, len(orders))
+		for _, o := range orders {
+			orderIDs = append(orderIDs, o.ID)
+		}
 
-	itemQuery, args, err := sqlx.In(
-		`SELECT order_id, product_id, quantity, price FROM order_items WHERE order_id IN (?)`,
-		orderIDs,
-	)
-	if err != nil {
-		return nil, err
-	}
-	itemQuery = r.db.Rebind(itemQuery)
+		itemQuery, args, err := sqlx.In(
+			`SELECT order_id, product_id, quantity, price FROM order_items WHERE order_id IN (?)`,
+			orderIDs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		itemQuery = r.db.Rebind(itemQuery)
 
-	itemRows, err := r.db.QueryxContext(ctx, itemQuery, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer itemRows.Close()
+		itemRows, err := r.db.QueryxContext(ctx, itemQuery, args...)
+		if err != nil {
+			return nil, err
+		}
+		defer itemRows.Close()
 
-	if err := rows.Err(); err != nil {
-		return nil, err
+		if err := itemRows.Err(); err != nil {
+			return nil, err
+		}
 	}
 
 	return orders, nil

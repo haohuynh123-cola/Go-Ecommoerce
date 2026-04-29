@@ -11,16 +11,18 @@ import {
 interface AuthSplitLayoutProps {
   /** Left-column form content. */
   children: ReactNode;
-  /** Right-column heading. */
-  panelTitle: string;
-  /** Right-column subheading / supporting copy. */
-  panelSubtitle: string;
+  /** Right-column heading. Required unless `hidePanel` is true. */
+  panelTitle?: string;
+  /** Right-column subheading / supporting copy. Required unless `hidePanel` is true. */
+  panelSubtitle?: string;
   /** Optional override for the kicker text shown above panel title. */
   panelKicker?: string;
   /** Hide the global storefront chrome by rendering on a full-bleed shell. */
   fullBleed?: boolean;
   /** Render an "Admin" tag in the brand mark (used by AdminLoginPage). */
   variant?: 'storefront' | 'admin';
+  /** When true, only the form column is rendered (centered, no marketing panel). */
+  hidePanel?: boolean;
 }
 
 const PANEL_FEATURES = [
@@ -37,15 +39,18 @@ export function AuthSplitLayout({
   panelKicker = 'Welcome to Ecomm',
   fullBleed = false,
   variant = 'storefront',
+  hidePanel = false,
 }: AuthSplitLayoutProps) {
+  const rootClass = hidePanel
+    ? fullBleed
+      ? 'min-h-dvh grid place-items-center bg-[var(--color-bg)]'
+      : 'grid place-items-center -mx-[var(--container-padding)] -mt-8 md:-mt-10 -mb-16 min-h-[calc(100dvh-3.5rem)]'
+    : fullBleed
+    ? 'min-h-dvh grid lg:grid-cols-2 bg-[var(--color-bg)]'
+    : 'grid lg:grid-cols-2 gap-0 -mx-[var(--container-padding)] -mt-8 md:-mt-10 -mb-16 min-h-[calc(100dvh-3.5rem)]';
+
   return (
-    <div
-      className={
-        fullBleed
-          ? 'min-h-dvh grid lg:grid-cols-2 bg-[var(--color-bg)]'
-          : 'grid lg:grid-cols-2 gap-0 -mx-[var(--container-padding)] -mt-8 md:-mt-10 -mb-16 min-h-[calc(100dvh-3.5rem)]'
-      }
-    >
+    <div className={rootClass}>
       {/* ─── Form column ───────────────────────────────────────────── */}
       <section className="flex items-center justify-center px-6 py-10 md:px-10 lg:px-16 page-enter">
         <div className="w-full max-w-md flex flex-col gap-6">
@@ -69,6 +74,7 @@ export function AuthSplitLayout({
       </section>
 
       {/* ─── Marketing panel ───────────────────────────────────────── */}
+      {!hidePanel && (
       <aside
         className="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 text-white bg-[var(--color-sidebar)]"
         aria-hidden
@@ -131,6 +137,7 @@ export function AuthSplitLayout({
           ))}
         </ul>
       </aside>
+      )}
     </div>
   );
 }

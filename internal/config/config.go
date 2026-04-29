@@ -45,7 +45,7 @@ type LogConfig struct {
 type SMTPConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`
-	Username string `mapstructure:"username"`
+	Email    string `mapstructure:"email"`
 	Password string `mapstructure:"password"`
 }
 

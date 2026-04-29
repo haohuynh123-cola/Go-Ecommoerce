@@ -34,10 +34,11 @@ func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
 	authGroup := r.Group("api/v1/auth")
 	authGroup.POST("/login", h.Login)
 	authGroup.POST("/register", h.Register)
+	authGroup.POST("/verify-otp", h.VerifyOTP)
 
-	auth := r.Group("api/v1/auth")
-	auth.Use(middleware.AuthMiddleware(&h.cfg))
-	auth.GET("/me", h.Me)
+	authPrivate := r.Group("api/v1/auth")
+	authPrivate.Use(middleware.AuthMiddleware(&h.cfg))
+	authPrivate.GET("/me", h.Me)
 
 }
 
@@ -145,4 +146,45 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pkg.SuccessResponse(user))
+}
+
+// VerifyOTP handles requests to verify OTP for registration
+// @Summary      Verify OTP for registration
+// @Description  Verify the OTP sent to the user's email during registration
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        verifyOTPRequest  body      dto.RequestVerifyOTP  true  "Verify OTP request"
+// @Success      200  {object}  pkg.SuccessResponseSwag{data=string}
+// @Failure      400  {object}  pkg.ErrorResponseSwag
+// @Failure      401  {object}  pkg.ErrorResponseSwag
+// @Failure      500  {object}  pkg.ErrorResponseSwag
+// @Router       /auth/verify-otp [post]
+func (h *AuthHandler) VerifyOTP(c *gin.Context) {
+	var req dto.RequestVerifyOTP
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, pkg.ValidationError(err))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	_, err := h.service.VerifyOTP(ctx, req)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidOTP) {
+			c.JSON(http.StatusUnauthorized, pkg.ErrorResponse(domain.ErrCodeUnauthorized, "invalid OTP"))
+			return
+		}
+		if errors.Is(err, domain.ErrOTPExpired) {
+			c.JSON(http.StatusUnauthorized, pkg.ErrorResponse(domain.ErrCodeUnauthorized, "OTP expired"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, pkg.ErrorResponse(domain.ErrCodeInternal, "internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, pkg.SuccessResponse("OTP verified successfully"))
 }

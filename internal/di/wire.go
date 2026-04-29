@@ -21,15 +21,22 @@ func provideJWTSecret(cfg config.JWTConfig) string {
 }
 
 var AuthSet = wire.NewSet(
+	//Repositories
 	repo.NewUserRepository,
+	//Cache
+	cache.NewUserCache,
+	//Services
 	provideJWTSecret,
 	service.NewAuthService,
 	handler.NewAuthHandler,
 )
 
 var ProductSet = wire.NewSet(
+	//Repositories
 	repo.NewProductRepository,
+	//Cache
 	cache.NewProductCache,
+	//Services
 	service.NewProductService,
 	handler.NewProductHandler,
 )
@@ -51,7 +58,7 @@ var OrderSet = wire.NewSet(
 	handler.NewOrderHandler,
 )
 
-func InitializeAuthHandler(db *sqlx.DB, jwtCfg config.JWTConfig) *handler.AuthHandler {
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *handler.AuthHandler {
 	wire.Build(AuthSet)
 	return nil
 }

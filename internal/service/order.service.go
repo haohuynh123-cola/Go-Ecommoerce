@@ -116,7 +116,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 func (s *OrderService) GetOrdersByUserID(ctx context.Context, customerID int64) ([]*dto.OrderResponse, error) {
 	orders, err := s.repo.GetOrdersByUserID(ctx, customerID)
 	if err != nil {
-		if err == domain.ErrOrderNotFound {
+		if errors.Is(err, domain.ErrOrderNotFound) {
 			return nil, err
 		}
 		return nil, err

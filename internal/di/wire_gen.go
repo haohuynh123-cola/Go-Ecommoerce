@@ -20,10 +20,11 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeAuthHandler(db *sqlx.DB, jwtCfg config.JWTConfig) *handler.AuthHandler {
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *handler.AuthHandler {
 	iUserRepository := repo.NewUserRepository(db)
 	string2 := provideJWTSecret(jwtCfg)
-	iAuthService := service.NewAuthService(iUserRepository, string2)
+	userCache := cache.NewUserCache(rdb, cacheTTL)
+	iAuthService := service.NewAuthService(iUserRepository, string2, userCache, smtpCfg)
 	authHandler := handler.NewAuthHandler(iAuthService, jwtCfg)
 	return authHandler
 }
@@ -61,7 +62,7 @@ func provideJWTSecret(cfg config.JWTConfig) string {
 	return cfg.SecretKey
 }
 
-var AuthSet = wire.NewSet(repo.NewUserRepository, provideJWTSecret, service.NewAuthService, handler.NewAuthHandler)
+var AuthSet = wire.NewSet(repo.NewUserRepository, cache.NewUserCache, provideJWTSecret, service.NewAuthService, handler.NewAuthHandler)
 
 var ProductSet = wire.NewSet(repo.NewProductRepository, cache.NewProductCache, service.NewProductService, handler.NewProductHandler)
 

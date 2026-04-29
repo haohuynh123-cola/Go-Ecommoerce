@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	userCacheTTL    = 5 * time.Minute
 	productCacheTTL = 5 * time.Minute
 	cartCacheTTL    = 30 * time.Minute
 	orderCacheTTL   = 30 * time.Minute
@@ -42,7 +43,7 @@ func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine
 		MaxAge:           12 * time.Hour,
 	}))
 
-	authHandler := di.InitializeAuthHandler(db, cfg.JWT)
+	authHandler := di.InitializeAuthHandler(db, rdb, userCacheTTL, cfg.JWT, cfg.SMTP)
 	authHandler.RegisterRoutes(r)
 
 	productHandler := di.InitializeProductHandler(db, rdb, productCacheTTL)

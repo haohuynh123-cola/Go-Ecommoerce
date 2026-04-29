@@ -57,11 +57,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthSplitLayout
-      panelKicker="Welcome back"
-      panelTitle="Sign in to keep shopping the latest tech."
-      panelSubtitle="Track orders, save favorites, and get member-only deals on phones, laptops, and accessories."
-    >
+    <AuthSplitLayout hidePanel>
       <header className="flex flex-col gap-1.5">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--color-ink)]">
           Sign in

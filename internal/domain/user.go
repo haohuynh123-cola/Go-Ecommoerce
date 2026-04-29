@@ -27,4 +27,5 @@ type IUserRepository interface {
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
 	FindUserByID(ctx context.Context, id int64) (*MeResult, error)
 	CreateUser(ctx context.Context, req *User) (*User, error)
+	VerifyUserByEmail(ctx context.Context, email string, verify bool) error
 }

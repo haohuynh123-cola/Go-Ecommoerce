@@ -70,3 +70,9 @@ func (u UserRepository) FindUserByID(ctx context.Context, id int64) (*domain.MeR
 
 	return &user, nil
 }
+
+func (u UserRepository) VerifyUserByEmail(ctx context.Context, email string, verify bool) error {
+	query := `UPDATE users SET verify = ? WHERE email = ?`
+	_, err := u.db.ExecContext(ctx, query, verify, email)
+	return err
+}

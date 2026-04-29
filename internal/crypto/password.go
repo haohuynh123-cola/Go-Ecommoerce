@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"fmt"
 	"math/rand"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,10 +20,7 @@ func CheckPasswordHash(password, hash string) error {
 
 // GenerateOTP generates a random 6-digit OTP
 func GenerateOTP() string {
-	// Generate a random 6-digit OTP
-	otp := ""
-	for i := 0; i < 6; i++ {
-		otp += string('0' + byte(rand.Intn(10)))
-	}
-	return otp
+	// Generate a random 6-digit OTP math randomly
+	otp := rand.Intn(1000000)
+	return fmt.Sprintf("%06d", otp)
 }

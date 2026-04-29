@@ -46,6 +46,13 @@ export interface MeResponse {
   email: string;
 }
 
+/** POST /auth/verify-otp — returns the verified user. No token issued; user logs in afterwards. */
+export interface VerifyOtpResponse {
+  id: number;
+  name: string;
+  email: string;
+}
+
 // ─── Product ──────────────────────────────────────────────────
 /** domain.Product — no created_at / updated_at on the backend. */
 export interface Product {
