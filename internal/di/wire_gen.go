@@ -7,65 +7,52 @@
 package di
 
 import (
-	"github.com/google/wire"
+	"time"
+
+	"haohuynh123-cola/ecommce/internal/modules/auth"
+	"haohuynh123-cola/ecommce/internal/modules/cart"
+	"haohuynh123-cola/ecommce/internal/modules/order"
+	"haohuynh123-cola/ecommce/internal/modules/product"
+	"haohuynh123-cola/ecommce/internal/platform/config"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
-	"haohuynh123-cola/ecommce/internal/cache"
-	"haohuynh123-cola/ecommce/internal/config"
-	"haohuynh123-cola/ecommce/internal/handler"
-	"haohuynh123-cola/ecommce/internal/repo"
-	"haohuynh123-cola/ecommce/internal/service"
-	"time"
 )
 
 // Injectors from wire.go:
 
-func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *handler.AuthHandler {
-	iUserRepository := repo.NewUserRepository(db)
-	string2 := provideJWTSecret(jwtCfg)
-	userCache := cache.NewUserCache(rdb, cacheTTL)
-	iAuthService := service.NewAuthService(iUserRepository, string2, userCache, smtpCfg)
-	authHandler := handler.NewAuthHandler(iAuthService, jwtCfg)
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *auth.AuthHandler {
+	iUserRepository := auth.NewUserRepository(db)
+	secret := auth.ProvideJWTSecret(jwtCfg)
+	userCache := auth.NewUserCache(rdb, cacheTTL)
+	iAuthService := auth.NewAuthService(iUserRepository, secret, userCache, smtpCfg)
+	authHandler := auth.NewAuthHandler(iAuthService, jwtCfg)
 	return authHandler
 }
 
-func InitializeProductHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration) *handler.ProductHandler {
-	productRepository := repo.NewProductRepository(db)
-	productCache := cache.NewProductCache(rdb, cacheTTL)
-	productService := service.NewProductService(productRepository, productCache)
-	productHandler := handler.NewProductHandler(productService)
+func InitializeProductHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration) *product.ProductHandler {
+	productRepository := product.NewProductRepository(db)
+	productCache := product.NewProductCache(rdb, cacheTTL)
+	productService := product.NewProductService(productRepository, productCache)
+	productHandler := product.NewProductHandler(productService)
 	return productHandler
 }
 
-func InitializeCartHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *handler.CartHandler {
-	cartRepository := repo.NewCartRepository(db)
-	cartCache := cache.NewCartCache(rdb, cacheTTL)
-	cartService := service.NewCartService(cartRepository, cartCache)
-	cartHandler := handler.NewCartHandler(cartService, jwtCfg)
+func InitializeCartHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *cart.CartHandler {
+	cartRepository := cart.NewCartRepository(db)
+	cartCache := cart.NewCartCache(rdb, cacheTTL)
+	cartService := cart.NewCartService(cartRepository, cartCache)
+	cartHandler := cart.NewCartHandler(cartService, jwtCfg)
 	return cartHandler
 }
 
-func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *handler.OrderHandler {
-	orderRepository := repo.NewOrderRepository(db)
-	orderItemRepository := repo.NewOrderItemRepository(db)
-	productRepository := repo.NewProductRepository(db)
-	orderActivityRepository := repo.NewOrderActivityRepository(db)
-	orderCache := cache.NewOrderCache(rdb, cacheTTL)
-	orderService := service.NewOrderService(orderRepository, orderItemRepository, productRepository, orderActivityRepository, orderCache)
-	orderHandler := handler.NewOrderHandler(orderService, jwtCfg)
+func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *order.OrderHandler {
+	orderRepository := order.NewOrderRepository(db)
+	orderItemRepository := order.NewOrderItemRepository(db)
+	productRepository := product.NewProductRepository(db)
+	orderActivityRepository := order.NewOrderActivityRepository(db)
+	orderCache := order.NewOrderCache(rdb, cacheTTL)
+	orderService := order.NewOrderService(orderRepository, orderItemRepository, productRepository, orderActivityRepository, orderCache)
+	orderHandler := order.NewOrderHandler(orderService, jwtCfg)
 	return orderHandler
 }
-
-// wire.go:
-
-func provideJWTSecret(cfg config.JWTConfig) string {
-	return cfg.SecretKey
-}
-
-var AuthSet = wire.NewSet(repo.NewUserRepository, cache.NewUserCache, provideJWTSecret, service.NewAuthService, handler.NewAuthHandler)
-
-var ProductSet = wire.NewSet(repo.NewProductRepository, cache.NewProductCache, service.NewProductService, handler.NewProductHandler)
-
-var CartSet = wire.NewSet(repo.NewCartRepository, cache.NewCartCache, service.NewCartService, handler.NewCartHandler)
-
-var OrderSet = wire.NewSet(repo.NewOrderRepository, repo.NewOrderItemRepository, repo.NewProductRepository, repo.NewOrderActivityRepository, cache.NewOrderCache, service.NewOrderService, handler.NewOrderHandler)

@@ -4,76 +4,35 @@
 package di
 
 import (
-	"haohuynh123-cola/ecommce/internal/cache"
-	"haohuynh123-cola/ecommce/internal/config"
-	"haohuynh123-cola/ecommce/internal/handler"
-	"haohuynh123-cola/ecommce/internal/repo"
-	"haohuynh123-cola/ecommce/internal/service"
 	"time"
+
+	"haohuynh123-cola/ecommce/internal/modules/auth"
+	"haohuynh123-cola/ecommce/internal/modules/cart"
+	"haohuynh123-cola/ecommce/internal/modules/order"
+	"haohuynh123-cola/ecommce/internal/modules/product"
+	"haohuynh123-cola/ecommce/internal/platform/config"
 
 	"github.com/google/wire"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 )
 
-func provideJWTSecret(cfg config.JWTConfig) string {
-	return cfg.SecretKey
-}
-
-var AuthSet = wire.NewSet(
-	//Repositories
-	repo.NewUserRepository,
-	//Cache
-	cache.NewUserCache,
-	//Services
-	provideJWTSecret,
-	service.NewAuthService,
-	handler.NewAuthHandler,
-)
-
-var ProductSet = wire.NewSet(
-	//Repositories
-	repo.NewProductRepository,
-	//Cache
-	cache.NewProductCache,
-	//Services
-	service.NewProductService,
-	handler.NewProductHandler,
-)
-
-var CartSet = wire.NewSet(
-	repo.NewCartRepository,
-	cache.NewCartCache,
-	service.NewCartService,
-	handler.NewCartHandler,
-)
-
-var OrderSet = wire.NewSet(
-	repo.NewOrderRepository,
-	repo.NewOrderItemRepository,
-	repo.NewProductRepository,
-	repo.NewOrderActivityRepository,
-	cache.NewOrderCache,
-	service.NewOrderService,
-	handler.NewOrderHandler,
-)
-
-func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *handler.AuthHandler {
-	wire.Build(AuthSet)
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *auth.AuthHandler {
+	wire.Build(auth.WireSet)
 	return nil
 }
 
-func InitializeProductHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration) *handler.ProductHandler {
-	wire.Build(ProductSet)
+func InitializeProductHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration) *product.ProductHandler {
+	wire.Build(product.WireSet)
 	return nil
 }
 
-func InitializeCartHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *handler.CartHandler {
-	wire.Build(CartSet)
+func InitializeCartHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *cart.CartHandler {
+	wire.Build(cart.WireSet)
 	return nil
 }
 
-func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *handler.OrderHandler {
-	wire.Build(OrderSet)
+func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *order.OrderHandler {
+	wire.Build(order.WireSet)
 	return nil
 }

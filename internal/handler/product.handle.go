@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"haohuynh123-cola/ecommce/internal/domain"
 	"haohuynh123-cola/ecommce/internal/dto"
 	"haohuynh123-cola/ecommce/pkg"
@@ -84,18 +83,6 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	c.JSON(http.StatusOK, pkg.SuccessResponse(product))
 }
 
-// CreateProduct handles requests to create a new product
-// @Summary      Create product
-// @Description  Create a new product with the provided details
-// @Tags         Products
-// @Accept       json
-// @Produce      json
-// @Param        createProductRequest  body      dto.CreateProductRequest  true  "Create product request"
-// @Success      201  {object}  pkg.SuccessResponseSwag{data=domain.Product}
-// @Failure      400  {object}  pkg.ErrorResponseSwag
-// @Failure      409  {object}  pkg.ErrorResponseSwag
-// @Failure      500  {object}  pkg.ErrorResponseSwag
-// @Router       /products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	var req dto.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -117,20 +104,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	c.JSON(http.StatusCreated, pkg.SuccessResponse(createdProduct))
 }
 
-// UpdateProduct handles requests to update an existing product
-// @Summary      Update product
-// @Description  Update the details of an existing product by ID
-// @Tags         Products
-// @Accept       json
-// @Produce      json
-// @Param        id                    path      int64                     true  "Product ID"
-// @Param        updateProductRequest   body      dto.UpdateProductRequest  true  "Update product request"
-// @Success      200                   {object}  pkg.SuccessResponseSwag{data=domain.Product}
-// @Failure      400                   {object}  pkg.ErrorResponseSwag
-// @Failure      404                   {object}  pkg.ErrorResponseSwag
-// @Failure      409                   {object}  pkg.ErrorResponseSwag
-// @Failure      500                   {object}  pkg.ErrorResponseSwag
-// @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	// Implement logic to update an existing product
 	var req dto.UpdateProductRequest
@@ -159,18 +132,6 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, pkg.SuccessResponse(updatedProduct))
 }
 
-// DeleteProduct handles requests to delete a product by ID
-// @Summary      Delete product
-// @Description  Delete an existing product by ID
-// @Tags         Products
-// @Accept       json
-// @Produce      json
-// @Param        id  path      int64  true  "Product ID"
-// @Success      200 {object}  pkg.SuccessResponseSwag
-// @Failure      400 {object}  pkg.ErrorResponseSwag
-// @Failure      404 {object}  pkg.ErrorResponseSwag
-// @Failure      500 {object}  pkg.ErrorResponseSwag
-// @Router       /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	// Implement logic to delete a product
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -180,9 +141,9 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	_, err = h.productService.DeleteProduct(c.Request.Context(), int64(id))
+	err = h.productService.DeleteProduct(c.Request.Context(), int64(id))
 	if err != nil {
-		if errors.Is(err, domain.ErrProductNotFound) {
+		if err == domain.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, pkg.ErrorResponse(domain.ErrCodeProductNotFound, "product not found"))
 			return
 		}

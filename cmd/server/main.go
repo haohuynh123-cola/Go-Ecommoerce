@@ -1,13 +1,16 @@
 package main
 
 import (
-	"haohuynh123-cola/ecommce/internal/config"
-	"haohuynh123-cola/ecommce/internal/initialize"
-	"haohuynh123-cola/ecommce/internal/middleware"
 	"log"
 	"time"
 
-	_ "haohuynh123-cola/ecommce/internal/docs"
+	"haohuynh123-cola/ecommce/internal/platform/config"
+	"haohuynh123-cola/ecommce/internal/platform/database"
+	"haohuynh123-cola/ecommce/internal/platform/redisclient"
+	"haohuynh123-cola/ecommce/internal/platform/server"
+	"haohuynh123-cola/ecommce/internal/shared/middleware"
+
+	_ "haohuynh123-cola/ecommce/docs"
 )
 
 // @title           E-commerce API
@@ -31,14 +34,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := initialize.InitDatabase(&cfg.Database)
+	db, err := database.InitDatabase(&cfg.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer db.Close()
 
-	redisClient, err := initialize.InitRedis(&cfg.Redis)
+	redisClient, err := redisclient.InitRedis(&cfg.Redis)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +49,7 @@ func main() {
 
 	// Initialize Log system
 
-	r := initialize.SetupRouter(db, redisClient, cfg) // Initialize routes
+	r := server.SetupRouter(db, redisClient, cfg) // Initialize routes
 
 	//use rate limiter middleware for all routes,  1 minute 100 requests per minute
 	globalLimit := middleware.NewRateLimiter(redisClient, 100, time.Minute)

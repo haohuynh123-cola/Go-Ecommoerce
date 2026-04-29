@@ -1,0 +1,154 @@
+package auth
+
+import (
+	"context"
+	"log"
+	"time"
+
+	authdto "haohuynh123-cola/ecommce/internal/modules/auth/dto"
+	"haohuynh123-cola/ecommce/internal/platform/config"
+	"haohuynh123-cola/ecommce/internal/shared/crypto"
+	"haohuynh123-cola/ecommce/internal/shared/errs"
+	"haohuynh123-cola/ecommce/internal/shared/mailer"
+)
+
+type AuthService struct {
+	repo      IUserRepository
+	secretKey string
+	rdb       *UserCache
+	smtp      config.SMTPConfig
+}
+
+func NewAuthService(repository IUserRepository, secretKey string, rdb *UserCache, smtp config.SMTPConfig) IAuthService {
+	return &AuthService{
+		repo:      repository,
+		secretKey: secretKey,
+		rdb:       rdb,
+		smtp:      smtp,
+	}
+}
+
+func (as *AuthService) Login(ctx context.Context, req authdto.RequestLogin) (*authdto.ResponseLogin, error) {
+	//Find user by email
+	user, err := as.repo.FindUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, errs.ErrInvalidCredentials
+	}
+	//Compare password
+	err = crypto.CheckPasswordHash(req.Password, user.Password)
+	if err != nil {
+		return nil, errs.ErrInvalidCredentials
+	}
+
+	//generate token
+	token, err := crypto.GenerateTokenJWT(as.secretKey, user.ID, user.Name, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authdto.ResponseLogin{
+		ID:    user.ID,
+		Email: user.Email,
+		Name:  user.Name,
+		Token: token,
+	}, nil
+}
+
+func (as *AuthService) Register(ctx context.Context, req authdto.RequestRegister) (*authdto.ResponseRegister, error) {
+	emailExist, err := as.repo.FindUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	//If email exist return error
+	if emailExist != nil {
+		return nil, errs.ErrEmailAlreadyExists
+	}
+	//Hash password
+	password, err := crypto.HashPassword(req.Password)
+
+	if err != nil {
+		return nil, err
+	}
+	//Format request DTO to Domain User
+	user := &User{
+		Email:    req.Email,
+		Name:     req.Name,
+		Password: password,
+	}
+
+	createdUser, err := as.repo.CreateUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	otp := crypto.GenerateOTP()
+
+	if err := as.rdb.SetOTPRegister(ctx, req.Email, otp, 5*time.Minute); err != nil {
+		return nil, err
+	}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered from panic in send email: %v", r)
+			}
+		}()
+
+		if err := mailer.SendEmail(as.smtp, req.Email, otp); err != nil {
+			log.Printf("Failed to send OTP email: %v", err)
+		}
+	}()
+
+	return &authdto.ResponseRegister{
+		ID:    createdUser.ID,
+		Email: createdUser.Email,
+		Name:  createdUser.Name,
+	}, nil
+}
+
+func (as *AuthService) GetMe(ctx context.Context, userID int64) (*authdto.ResponseMe, error) {
+	//Get user from context
+	if userID == 0 {
+		return nil, errs.ErrTokenInvalid
+	}
+
+	user, err := as.repo.FindUserByID(ctx, userID)
+	if err != nil {
+		return nil, errs.ErrTokenInvalid
+	}
+
+	return &authdto.ResponseMe{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}, nil
+}
+
+func (as *AuthService) VerifyOTP(ctx context.Context, req authdto.RequestVerifyOTP) (bool, error) {
+	//Get OTP from cache
+	cachedOTP, found, err := as.rdb.GetOTPRegister(ctx, req.Email)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, errs.ErrOTPExpired
+	}
+	if cachedOTP != req.OTP {
+		return false, errs.ErrInvalidOTP
+	}
+
+	// Mark user as verified in the database
+	if err := as.repo.VerifyUserByEmail(ctx, req.Email, true); err != nil {
+		return false, err
+	}
+
+	// Clear OTP after successful verification
+	if err := as.rdb.ClearOTPRegister(ctx, req.Email); err != nil {
+		log.Printf("Failed to clear OTP from cache: %v", err)
+	}
+
+	return true, nil
+}

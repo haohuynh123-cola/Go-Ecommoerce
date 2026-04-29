@@ -19,8 +19,10 @@ migrate-down:
 build:
 	docker compose build .
 
-
 swag:
-	swag init -g cmd/server/main.go  --parseInternal  -o internal/docs
+	swag init -g cmd/server/main.go  --parseInternal  -o docs
 
-.PHONY: run migrate-up migrate-down setup build swag
+wire:
+	cd internal/di && go run github.com/google/wire/cmd/wire
+
+.PHONY: run migrate-up migrate-down setup build swag wire

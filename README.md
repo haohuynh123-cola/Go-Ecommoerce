@@ -32,62 +32,127 @@ Go-Ecommoerce is a RESTful e-commerce backend built with **Go** and **Gin**. The
 
 ## 3. Source Structure
 
+The project follows a **modular monolith** layout. Each business domain
+(`auth`, `product`, `cart`, `order`) is self-contained under
+`internal/modules/`, with cross-cutting concerns split into `shared/`
+(reusable building blocks) and `platform/` (infrastructure adapters).
+
 ```text
 ecommce/
 ├── Dockerfile
 ├── Makefile
 ├── README.md
-├── cmd/
-│   └── server/
 ├── docker-compose.yaml
 ├── go.mod
 ├── go.sum
-├── http/
+├── cmd/
+│   └── server/                 # application entrypoint (main.go)
+├── docs/                       # generated Swagger files (swag init output)
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
+├── http/                       # ready-to-use HTTP request examples
 │   ├── auth.http
 │   ├── cart.http
 │   ├── order.http
 │   └── product.http
 ├── internal/
-│   ├── cache/
-│   ├── config/
-│   ├── crypto/
-│   ├── docs/
-│   ├── domain/
-│   ├── dto/
-│   ├── handler/
-│   ├── helper/
-│   ├── initialize/
-│   ├── middleware/
-│   ├── repo/
-│   └── service/
-├── migrations/
+│   ├── di/                     # Wire DI: aggregates module WireSets
+│   │   ├── wire.go
+│   │   └── wire_gen.go
+│   ├── modules/                # one self-contained package per domain
+│   │   ├── auth/
+│   │   │   ├── handler.go
+│   │   │   ├── service.go
+│   │   │   ├── repository.go
+│   │   │   ├── cache.go
+│   │   │   ├── domain.go
+│   │   │   ├── wire.go
+│   │   │   └── dto/
+│   │   │       └── dto.go      # package authdto
+│   │   ├── product/
+│   │   │   ├── handler.go
+│   │   │   ├── service.go
+│   │   │   ├── repository.go
+│   │   │   ├── cache.go
+│   │   │   ├── domain.go
+│   │   │   ├── wire.go
+│   │   │   └── dto/
+│   │   │       └── dto.go      # package productdto
+│   │   ├── cart/
+│   │   │   ├── handler.go
+│   │   │   ├── service.go
+│   │   │   ├── repository.go
+│   │   │   ├── cache.go
+│   │   │   ├── domain.go
+│   │   │   ├── wire.go
+│   │   │   └── dto/
+│   │   │       └── dto.go      # package cartdto
+│   │   └── order/
+│   │       ├── handler.go
+│   │       ├── service.go
+│   │       ├── repository.go
+│   │       ├── item_repository.go
+│   │       ├── activity_repository.go
+│   │       ├── cache.go
+│   │       ├── domain.go
+│   │       ├── wire.go
+│   │       └── dto/
+│   │           └── dto.go      # package orderdto
+│   ├── platform/               # infrastructure / external adapters
+│   │   ├── config/             # Viper config + config.yaml
+│   │   │   ├── config.go
+│   │   │   ├── config.yaml
+│   │   │   └── config.example.yaml
+│   │   ├── database/           # MySQL initialization (sqlx)
+│   │   │   └── mysql.go
+│   │   ├── redisclient/        # Redis client initialization
+│   │   │   └── redis.go
+│   │   ├── logger/             # logger setup
+│   │   │   └── logger.go
+│   │   └── server/             # Gin engine + module route registration
+│   │       └── router.go
+│   └── shared/                 # cross-cutting helpers
+│       ├── crypto/             # JWT, bcrypt, OTP generation
+│       ├── errs/               # sentinel errors and error codes
+│       ├── helper/             # pagination + small utilities
+│       ├── mailer/             # SMTP email sender
+│       ├── middleware/         # auth middleware + rate limiter
+│       └── response/           # API response envelope (success/error/paginated)
+├── migrations/                 # Goose SQL migrations
 │   ├── 20260422064943_create_urse_table.sql
 │   ├── 20260423063902_add_table_products.sql
 │   ├── 20260424140508_create_table_carts.sql
 │   ├── 20260426035554_createa_table_orders.sql
-│   └── 20260426035936_createa_table_order_items.sql
-├── pkg/
-│   └── response.go
-└── web/
+│   ├── 20260426035936_createa_table_order_items.sql
+│   ├── 20260427072101_create_table_order_activities.sql
+│   └── 20260428163109_add_column_verify_to_users_table.sql
+└── web/                        # frontend (Vite)
 ```
 
-### Directory roles
+### Layer roles
 
-- `cmd/server/`: application entrypoint
-- `internal/cache/`: Redis caching logic for products and carts
-- `internal/config/`: application configuration and YAML config
-- `internal/crypto/`: password hashing and JWT utilities
-- `internal/docs/`: generated Swagger files
-- `internal/domain/`: domain models, interfaces, and errors
-- `internal/dto/`: request and response DTOs
-- `internal/handler/`: HTTP handlers and route registration
-- `internal/initialize/`: MySQL and Redis initialization
-- `internal/middleware/`: auth and rate-limiting middleware
-- `internal/repo/`: data access layer
-- `internal/service/`: business logic layer
-- `migrations/`: Goose SQL migrations
-- `http/`: ready-to-use HTTP request examples
-- `pkg/`: shared helpers such as API response formatting
+- **`cmd/server/`**: application entrypoint. Loads config, initializes
+  MySQL/Redis, wires the router, starts the HTTP server.
+- **`internal/modules/<domain>/`**: each domain owns its own handler,
+  service, repository, cache, domain types, DTOs, and Wire set. Modules
+  do not depend on each other except via interfaces (e.g. `order` depends
+  on `product.ProductRepository`).
+- **`internal/modules/<domain>/dto/`** (`authdto`, `productdto`,
+  `cartdto`, `orderdto`): request/response DTOs kept in a sub-package so
+  that DTO and domain types with the same name (e.g. `Product`) do not
+  collide.
+- **`internal/shared/`**: language- and framework-level helpers reused by
+  every module — error sentinels, response envelope, JWT/bcrypt, mailer,
+  middleware, and small utilities.
+- **`internal/platform/`**: adapters to external systems (MySQL, Redis,
+  config, logger) and the HTTP server bootstrap.
+- **`internal/di/`**: Wire-based dependency injection. Aggregates each
+  module's `WireSet` into `InitializeXxxHandler` constructors that
+  `internal/platform/server` calls during route registration.
+- **`docs/`**: Swagger artifacts produced by `swag init`.
+- **`migrations/`**: schema versioning via Goose.
+- **`http/`**: example HTTP requests for manual testing.
 
 ## 4. System Components
 
@@ -115,7 +180,7 @@ The current schema includes:
 
 The application loads config from:
 
-`internal/config/config.yaml`
+`internal/platform/config/config.yaml`
 
 Current example:
 
@@ -192,7 +257,8 @@ make setup         # go mod tidy
 make migrate-up    # run goose up
 make migrate-down  # rollback migrations
 make build         # build docker image
-make swag          # generate Swagger docs
+make swag          # generate Swagger docs into ./docs
+make wire          # regenerate internal/di/wire_gen.go from WireSets
 ```
 
 ## 8. Swagger

@@ -1,26 +1,27 @@
-package repo
+package product
 
 import (
 	"context"
 	"database/sql"
-	"haohuynh123-cola/ecommce/internal/domain"
-	"haohuynh123-cola/ecommce/internal/helper"
-	"log"
+	"fmt"
+
+	"haohuynh123-cola/ecommce/internal/shared/errs"
+	"haohuynh123-cola/ecommce/internal/shared/helper"
 
 	"github.com/jmoiron/sqlx"
 )
 
-type ProductRepository struct {
+type ProductRepositoryImpl struct {
 	db *sqlx.DB
 }
 
-func NewProductRepository(db *sqlx.DB) domain.ProductRepository {
-	return &ProductRepository{
+func NewProductRepository(db *sqlx.DB) ProductRepository {
+	return &ProductRepositoryImpl{
 		db: db,
 	}
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context, filter domain.ProductFilter) ([]*domain.Product, error) {
+func (r *ProductRepositoryImpl) ListProducts(ctx context.Context, filter ProductFilter) ([]*Product, error) {
 	var (
 		conditions []string
 		args       []any
@@ -45,31 +46,30 @@ func (r *ProductRepository) ListProducts(ctx context.Context, filter domain.Prod
 
 	query := `SELECT id, name, description, sku, price, stock FROM products ` + whereClause + ` LIMIT ? OFFSET ?`
 
-	var products = make([]*domain.Product, 0)
+	var products = make([]*Product, 0)
 	err := r.db.SelectContext(ctx, &products, query, append(args, limit, offset)...)
 
 	if err != nil {
-		log.Printf("query failed: %v", err)
 		return nil, err
 	}
 	return products, nil
 }
 
-func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*domain.Product, error) {
+func (r *ProductRepositoryImpl) GetProductByID(ctx context.Context, id int64) (*Product, error) {
 	// Implement logic to get a product by ID from the database
 	query := `SELECT id, name, description, sku, price, stock FROM products WHERE id = ? LIMIT 1`
-	var product domain.Product
+	var product Product
 	err := r.db.GetContext(ctx, &product, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, errs.ErrProductNotFound
 		}
 		return nil, err
 	}
 	return &product, nil
 }
 
-func (r *ProductRepository) CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
+func (r *ProductRepositoryImpl) CreateProduct(ctx context.Context, product *Product) (*Product, error) {
 	// Implement logic to create a new product in the database
 	query := `INSERT INTO products(name, description, sku, price, stock) VALUES(?,?,?,?,?)`
 
@@ -97,7 +97,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, product *domain.P
 	return product, nil
 }
 
-func (r *ProductRepository) UpdateProduct(ctx context.Context, id int64, product *domain.Product) (*domain.Product, error) {
+func (r *ProductRepositoryImpl) UpdateProduct(ctx context.Context, id int64, product *Product) (*Product, error) {
 	// Implement logic to update an existing product in the database
 	query := `UPDATE products SET name = ?, description = ?, sku = ?, price = ?, stock = ? WHERE id = ?`
 
@@ -121,31 +121,42 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, id int64, product
 	return product, nil
 }
 
-func (r *ProductRepository) DeleteProduct(ctx context.Context, id int64) error {
+func (r *ProductRepositoryImpl) DeleteProduct(ctx context.Context, id int64) (bool, error) {
 	// Implement logic to delete a product from the database
 	query := `DELETE FROM products WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
+
 	if err != nil {
-		return err
+		fmt.Printf("Error deleting product: %v\n", err.Error())
+		return false, err
 	}
-	return nil
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	if rowsAffected == 0 {
+		return false, errs.ErrProductNotFound
+	}
+	return true, nil
+
 }
 
-func (r *ProductRepository) GetProductBySKU(ctx context.Context, sku string) (*domain.Product, error) {
+func (r *ProductRepositoryImpl) GetProductBySKU(ctx context.Context, sku string) (bool, error) {
 	// Implement logic to get a product by SKU from the database
-	query := `SELECT id, name, description, sku, price, stock FROM products WHERE sku = ? LIMIT 1`
-	var product domain.Product
-	err := r.db.GetContext(ctx, &product, query, sku)
+	query := `SELECT sku FROM products WHERE sku = ? LIMIT 1` //select only id to check existence
+	var id int64
+	err := r.db.GetContext(ctx, &id, query, sku)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return false, nil
 		}
-		return nil, err
+		return false, err
 	}
-	return &product, nil
+	return true, nil
 }
 
-func (r *ProductRepository) GetTotalProducts(ctx context.Context) (int64, error) {
+func (r *ProductRepositoryImpl) GetTotalProducts(ctx context.Context) (int64, error) {
 	// Implement logic to get total number of products from the database
 	query := `SELECT COUNT(*) FROM products`
 	var count int64
@@ -154,4 +165,19 @@ func (r *ProductRepository) GetTotalProducts(ctx context.Context) (int64, error)
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *ProductRepositoryImpl) GetProductByIDs(ctx context.Context, ids []int64) ([]*Product, error) {
+	query, args, err := sqlx.In(`SELECT id, name, description, sku, price, stock FROM products WHERE id IN (?)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+
+	var products []*Product
+	err = r.db.SelectContext(ctx, &products, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
