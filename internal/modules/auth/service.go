@@ -38,6 +38,10 @@ func (as *AuthService) Login(ctx context.Context, req authdto.RequestLogin) (*au
 	if user == nil {
 		return nil, errs.ErrInvalidCredentials
 	}
+
+	if !user.Verify {
+		return nil, errs.ErrEmailNotVerified
+	}
 	//Compare password
 	err = crypto.CheckPasswordHash(req.Password, user.Password)
 	if err != nil {
@@ -149,6 +153,41 @@ func (as *AuthService) VerifyOTP(ctx context.Context, req authdto.RequestVerifyO
 	if err := as.rdb.ClearOTPRegister(ctx, req.Email); err != nil {
 		log.Printf("Failed to clear OTP from cache: %v", err)
 	}
+
+	return true, nil
+}
+
+func (as *AuthService) ResendOTP(ctx context.Context, req authdto.RequestResendOTP) (bool, error) {
+	emailExist, err := as.repo.FindUserByEmail(ctx, req.Email)
+	if err != nil {
+		return false, err
+	}
+	//If email not exist return error
+	if emailExist == nil {
+		return false, errs.ErrEmailNotFound
+	}
+
+	if emailExist.Verify {
+		return false, errs.ErrEmailAlreadyVerified
+	}
+
+	otp := crypto.GenerateOTP()
+
+	if err := as.rdb.SetOTPRegister(ctx, req.Email, otp, 5*time.Minute); err != nil {
+		return false, err
+	}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered from panic in send email: %v", r)
+			}
+		}()
+
+		if err := mailer.SendEmail(as.smtp, req.Email, otp); err != nil {
+			log.Printf("Failed to send OTP email: %v", err)
+		}
+	}()
 
 	return true, nil
 }

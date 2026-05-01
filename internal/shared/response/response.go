@@ -65,6 +65,20 @@ func ErrorResponse(code string, message string) Response {
 	}
 }
 
+func PaginatedSuccessResponse(data any, page, pageSize int, totalItems int64) PaginatedResponse {
+	totalPages := int((totalItems + int64(pageSize) - 1) / int64(pageSize))
+	return PaginatedResponse{
+		Status: "success",
+		Data:   data,
+		Pagination: &PaginationMeta{
+			Page:       page,
+			PageSize:   pageSize,
+			TotalItems: totalItems,
+			TotalPages: totalPages,
+		},
+	}
+}
+
 func ValidationError(err error) Response {
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {
@@ -94,18 +108,4 @@ func msgForTag(tag string) string {
 		return "value is too long"
 	}
 	return "invalid value"
-}
-
-func PaginatedSuccessResponse(data any, page, pageSize int, totalItems int64) PaginatedResponse {
-	totalPages := int((totalItems + int64(pageSize) - 1) / int64(pageSize))
-	return PaginatedResponse{
-		Status: "success",
-		Data:   data,
-		Pagination: &PaginationMeta{
-			Page:       page,
-			PageSize:   pageSize,
-			TotalItems: totalItems,
-			TotalPages: totalPages,
-		},
-	}
 }

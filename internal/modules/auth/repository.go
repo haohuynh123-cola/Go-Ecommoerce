@@ -20,7 +20,7 @@ func NewUserRepository(db *sqlx.DB) IUserRepository {
 func (u UserRepository) FindUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 
-	err := u.db.GetContext(ctx, &user, "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1", email)
+	err := u.db.GetContext(ctx, &user, "SELECT id, name, email, verify, password FROM users WHERE email = ? LIMIT 1", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

@@ -36,6 +36,7 @@ func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
 	authGroup.POST("/login", h.Login)
 	authGroup.POST("/register", h.Register)
 	authGroup.POST("/verify-otp", h.VerifyOTP)
+	authGroup.POST("/resend-otp", h.ResendOTP)
 
 	authPrivate := r.Group("api/v1/auth")
 	authPrivate.Use(middleware.AuthMiddleware(&h.cfg))
@@ -72,6 +73,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, response.ErrorResponse(errs.ErrCodeUnauthorized, "invalid credentials"))
 			return
 		}
+
+		if errors.Is(err, errs.ErrEmailNotVerified) {
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse(errs.ErrCodeEmailNotVerified, "email not verified"))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeInternal, "internal server error"))
 		return
 	}
@@ -188,4 +195,29 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.SuccessResponse("OTP verified successfully"))
+}
+
+func (h *AuthHandler) ResendOTP(c *gin.Context) {
+	var req authdto.RequestResendOTP
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, response.ValidationError(err))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	_, err := h.service.ResendOTP(ctx, req)
+	if err != nil {
+		if errors.Is(err, errs.ErrEmailNotFound) {
+			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeEmailNotFound, "email not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeInternal, "internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.SuccessResponse("OTP resent successfully"))
 }
