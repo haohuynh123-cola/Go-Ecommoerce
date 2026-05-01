@@ -17,7 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *auth.AuthHandler {
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig, oauthCfg config.OAuthConfig) *auth.AuthHandler {
 	wire.Build(auth.WireSet)
 	return nil
 }

@@ -19,6 +19,7 @@ var (
 	ErrEmailNotFound        = errors.New("email not found")
 	ErrEmailNotVerified     = errors.New("email not verified")
 	ErrEmailAlreadyVerified = errors.New("email already verified")
+	ErrInvalidGoogleToken   = errors.New("invalid google id token")
 
 	ErrCodeInternal           = "internal_error"
 	ErrCodeUnauthorized       = "unauthorized"
@@ -32,4 +33,5 @@ var (
 	ErrCodeEmailNotFound      = "email_not_found"
 	ErrCodeInvalidOTP         = "invalid_otp"
 	ErrCodeEmailNotVerified   = "email_not_verified"
+	ErrCodeInvalidGoogleToken = "invalid_google_token"
 )

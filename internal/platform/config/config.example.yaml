@@ -27,3 +27,7 @@ smtp:
       port: 587
       username: "your_username"
       password: "your_password"
+
+oauth:
+      google:
+            client_id: "<your-google-oauth-client-id>.apps.googleusercontent.com"

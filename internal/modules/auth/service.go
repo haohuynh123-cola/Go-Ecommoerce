@@ -17,14 +17,16 @@ type AuthService struct {
 	secretKey string
 	rdb       *UserCache
 	smtp      config.SMTPConfig
+	oauth     config.OAuthConfig
 }
 
-func NewAuthService(repository IUserRepository, secretKey string, rdb *UserCache, smtp config.SMTPConfig) IAuthService {
+func NewAuthService(repository IUserRepository, secretKey string, rdb *UserCache, smtp config.SMTPConfig, oauth config.OAuthConfig) IAuthService {
 	return &AuthService{
 		repo:      repository,
 		secretKey: secretKey,
 		rdb:       rdb,
 		smtp:      smtp,
+		oauth:     oauth,
 	}
 }
 
@@ -49,6 +51,68 @@ func (as *AuthService) Login(ctx context.Context, req authdto.RequestLogin) (*au
 	}
 
 	//generate token
+	token, err := crypto.GenerateTokenJWT(as.secretKey, user.ID, user.Name, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authdto.ResponseLogin{
+		ID:    user.ID,
+		Email: user.Email,
+		Name:  user.Name,
+		Token: token,
+	}, nil
+}
+
+// LoginWithGoogle validates a Google-issued ID token and signs the user in,
+// auto-provisioning a verified account on first use.
+func (as *AuthService) LoginWithGoogle(ctx context.Context, req authdto.RequestGoogleLogin) (*authdto.ResponseLogin, error) {
+	if as.oauth.Google.ClientID == "" {
+		return nil, errs.ErrInvalidGoogleToken
+	}
+
+	payload, err := verifyGoogleIDToken(ctx, req.IDToken)
+	if err != nil {
+		return nil, errs.ErrInvalidGoogleToken
+	}
+	if payload.Aud != as.oauth.Google.ClientID {
+		return nil, errs.ErrInvalidGoogleToken
+	}
+	if payload.IsExpired(time.Now()) {
+		return nil, errs.ErrInvalidGoogleToken
+	}
+	if !payload.IsEmailVerified() || payload.Email == "" {
+		return nil, errs.ErrInvalidGoogleToken
+	}
+
+	user, err := as.repo.FindUserByEmail(ctx, payload.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		// Provision a new user. Password is left blank; password-based login
+		// will fail because bcrypt cannot match an empty hash.
+		created, err := as.repo.CreateUser(ctx, &User{
+			Email:    payload.Email,
+			Name:     payload.Name,
+			Password: "",
+		})
+		if err != nil {
+			return nil, err
+		}
+		if err := as.repo.VerifyUserByEmail(ctx, created.Email, true); err != nil {
+			return nil, err
+		}
+		created.Verify = true
+		user = created
+	} else if !user.Verify {
+		if err := as.repo.VerifyUserByEmail(ctx, user.Email, true); err != nil {
+			return nil, err
+		}
+		user.Verify = true
+	}
+
 	token, err := crypto.GenerateTokenJWT(as.secretKey, user.ID, user.Name, user.Email)
 	if err != nil {
 		return nil, err

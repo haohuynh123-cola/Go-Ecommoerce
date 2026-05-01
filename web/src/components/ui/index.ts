@@ -45,4 +45,4 @@ export { PageLoader, LoadingSpinner } from './LoadingSpinner';
 export { ErrorMessage, InlineError } from './ErrorMessage';
 export { ConfirmDialog } from './ConfirmDialog';
 export { FormField, Input, Textarea } from './FormField';
-export { inputClass, SocialButton, SocialDivider } from './form-controls';
+export { inputClass, SocialButton, SocialDivider, GoogleIcon } from './form-controls';

@@ -38,3 +38,11 @@ type RequestVerifyOTP struct {
 type RequestResendOTP struct {
 	Email string `json:"email" binding:"required,email"`
 }
+
+// RequestGoogleLogin carries the Google-issued ID token returned by Google
+// Identity Services on the client. The backend validates this token against
+// Google's tokeninfo endpoint and either signs an existing user in or
+// provisions a new (already-verified) account.
+type RequestGoogleLogin struct {
+	IDToken string `json:"id_token" binding:"required"`
+}

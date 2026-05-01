@@ -43,7 +43,7 @@ func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine
 		MaxAge:           12 * time.Hour,
 	}))
 
-	authHandler := di.InitializeAuthHandler(db, rdb, userCacheTTL, cfg.JWT, cfg.SMTP)
+	authHandler := di.InitializeAuthHandler(db, rdb, userCacheTTL, cfg.JWT, cfg.SMTP, cfg.OAuth)
 	authHandler.RegisterRoutes(r)
 
 	productHandler := di.InitializeProductHandler(db, rdb, productCacheTTL)

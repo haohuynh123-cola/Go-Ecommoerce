@@ -34,6 +34,7 @@ func NewAuthHandler(authService IAuthService, cfg config.JWTConfig) *AuthHandler
 func (h *AuthHandler) RegisterRoutes(r *gin.Engine) {
 	authGroup := r.Group("api/v1/auth")
 	authGroup.POST("/login", h.Login)
+	authGroup.POST("/google", h.GoogleLogin)
 	authGroup.POST("/register", h.Register)
 	authGroup.POST("/verify-otp", h.VerifyOTP)
 	authGroup.POST("/resend-otp", h.ResendOTP)
@@ -85,6 +86,41 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.SuccessResponse(user))
 
+}
+
+// GoogleLogin signs the user in using a Google-issued ID token.
+// @Summary      Sign in with Google
+// @Description  Validate a Google ID token and return a JWT for the matched (or auto-provisioned) user
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        googleLoginRequest  body      authdto.RequestGoogleLogin  true  "Google login request"
+// @Success      200  {object}  authdto.ResponseLogin
+// @Failure      400  {object}  response.ErrorResponseSwag
+// @Failure      401  {object}  response.ErrorResponseSwag
+// @Failure      500  {object}  response.ErrorResponseSwag
+// @Router       /auth/google [post]
+func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	var req authdto.RequestGoogleLogin
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.ValidationError(err))
+		return
+	}
+
+	user, err := h.service.LoginWithGoogle(ctx, req)
+	if err != nil {
+		if errors.Is(err, errs.ErrInvalidGoogleToken) {
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse(errs.ErrCodeInvalidGoogleToken, "invalid google id token"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeInternal, "internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.SuccessResponse(user))
 }
 
 // Register handles user registration requests

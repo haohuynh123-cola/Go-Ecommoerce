@@ -4,10 +4,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { register as registerUser, resendOtp, verifyOtp } from '@/lib/api/auth';
+import { loginWithGoogle, register as registerUser, resendOtp, verifyOtp } from '@/lib/api/auth';
+import { requestGoogleIdToken } from '@/lib/auth/google';
+import { useAuth } from '@/hooks/useAuth';
 import { AuthSplitLayout } from '@/components/auth/AuthSplitLayout';
 import {
   Field,
+  GoogleIcon,
   inputClass,
   InlineError,
   OtpInput,
@@ -29,10 +32,31 @@ type Step = 'form' | 'otp';
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { loginSuccess } = useAuth();
   const [step, setStep] = useState<Step>('form');
   const [serverError, setServerError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(true);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    if (googleLoading) return;
+    setServerError('');
+    setGoogleLoading(true);
+    try {
+      const idToken = await requestGoogleIdToken();
+      const response = await loginWithGoogle(idToken);
+      loginSuccess(response);
+      navigate('/', { replace: true });
+    } catch (err) {
+      const e = err as Error;
+      if (e.message !== 'Google Sign-In was cancelled.') {
+        setServerError(e.message ?? 'Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   const {
     register,
@@ -81,6 +105,8 @@ export function RegisterPage() {
           serverError={serverError}
           register={register}
           onSubmit={handleSubmit(onSubmit)}
+          googleLoading={googleLoading}
+          onGoogleSignIn={handleGoogleSignIn}
         />
       ) : (
         <OtpStep
@@ -110,6 +136,8 @@ interface RegisterFormStepProps {
   serverError: string;
   register: ReturnType<typeof useForm<FormValues>>['register'];
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  googleLoading: boolean;
+  onGoogleSignIn: () => void;
 }
 
 function RegisterFormStep({
@@ -124,6 +152,8 @@ function RegisterFormStep({
   serverError,
   register,
   onSubmit,
+  googleLoading,
+  onGoogleSignIn,
 }: RegisterFormStepProps) {
   return (
     <>
@@ -219,7 +249,12 @@ function RegisterFormStep({
       <SocialDivider />
 
       <div className="grid grid-cols-2 gap-3">
-        <SocialButton label="Google" disabled />
+        <SocialButton
+          label="Google"
+          icon={<GoogleIcon />}
+          onClick={onGoogleSignIn}
+          isLoading={googleLoading}
+        />
         <SocialButton label="Apple" disabled />
       </div>
     </>

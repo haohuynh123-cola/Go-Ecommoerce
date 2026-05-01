@@ -21,11 +21,11 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig) *auth.AuthHandler {
+func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig, oauthCfg config.OAuthConfig) *auth.AuthHandler {
 	iUserRepository := auth.NewUserRepository(db)
 	secret := auth.ProvideJWTSecret(jwtCfg)
 	userCache := auth.NewUserCache(rdb, cacheTTL)
-	iAuthService := auth.NewAuthService(iUserRepository, secret, userCache, smtpCfg)
+	iAuthService := auth.NewAuthService(iUserRepository, secret, userCache, smtpCfg, oauthCfg)
 	authHandler := auth.NewAuthHandler(iAuthService, jwtCfg)
 	return authHandler
 }

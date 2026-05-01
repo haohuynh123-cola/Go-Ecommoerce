@@ -12,6 +12,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	SMTP     SMTPConfig     `mapstructure:"smtp"`
 	Mailtrap MailtrapConfig `mapstructure:"mailtrap"`
+	OAuth    OAuthConfig    `mapstructure:"oauth"`
 }
 
 type DatabaseConfig struct {
@@ -53,6 +54,14 @@ type MailtrapConfig struct {
 	Token string `mapstructure:"token"`
 }
 
+type OAuthConfig struct {
+	Google GoogleOAuthConfig `mapstructure:"google"`
+}
+
+type GoogleOAuthConfig struct {
+	ClientID string `mapstructure:"client_id"`
+}
+
 func LoadConfig() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -82,4 +91,8 @@ func (c *Config) GetSMTPConfig() SMTPConfig {
 
 func (c *Config) GetMailtrapConfig() MailtrapConfig {
 	return c.Mailtrap
+}
+
+func (c *Config) GetOAuthConfig() OAuthConfig {
+	return c.OAuth
 }

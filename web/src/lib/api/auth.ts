@@ -13,6 +13,18 @@ export async function login(email: string, password: string): Promise<LoginRespo
 }
 
 /**
+ * POST /auth/google — exchanges a Google ID token (issued by Google Identity
+ * Services on the client) for our own JWT. Auto-provisions a verified account
+ * on first use, so the response shape matches `login()`.
+ */
+export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
+  const res = await apiClient.post<ApiSuccess<LoginResponse>>('/auth/google', {
+    id_token: idToken,
+  });
+  return res.data.data;
+}
+
+/**
  * POST /auth/register — creates the user (unverified) and emails a 6-digit OTP.
  * The client must follow up with `verifyOtp(email, code)` before the account is usable.
  */

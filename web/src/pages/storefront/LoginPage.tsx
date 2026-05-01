@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { login, resendOtp, verifyOtp } from '@/lib/api/auth';
+import { login, loginWithGoogle, resendOtp, verifyOtp } from '@/lib/api/auth';
+import { requestGoogleIdToken } from '@/lib/auth/google';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthSplitLayout } from '@/components/auth/AuthSplitLayout';
 import {
   ConfirmDialog,
   Field,
+  GoogleIcon,
   inputClass,
   InlineError,
   OtpInput,
@@ -49,6 +51,7 @@ export function LoginPage() {
   const [pending, setPending] = useState<PendingCredentials | null>(null);
   const [verifyPrompt, setVerifyPrompt] = useState<PendingCredentials | null>(null);
   const [confirmingVerify, setConfirmingVerify] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const {
     register,
@@ -111,6 +114,26 @@ export function LoginPage() {
   function handleCancelVerify() {
     if (confirmingVerify) return;
     setVerifyPrompt(null);
+  }
+
+  async function handleGoogleSignIn() {
+    if (googleLoading) return;
+    setServerError('');
+    setGoogleLoading(true);
+    try {
+      const idToken = await requestGoogleIdToken();
+      const response = await loginWithGoogle(idToken);
+      loginSuccess(response);
+      navigate(from, { replace: true });
+    } catch (err) {
+      const e = err as Error;
+      // The user explicitly cancelling the prompt is not worth surfacing as an error.
+      if (e.message !== 'Google Sign-In was cancelled.') {
+        setServerError(e.message ?? 'Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   if (step === 'otp' && pending) {
@@ -245,7 +268,12 @@ export function LoginPage() {
       <SocialDivider />
 
       <div className="grid grid-cols-2 gap-3">
-        <SocialButton label="Google" disabled />
+        <SocialButton
+          label="Google"
+          icon={<GoogleIcon />}
+          onClick={handleGoogleSignIn}
+          isLoading={googleLoading}
+        />
         <SocialButton label="Apple" disabled />
       </div>
 
