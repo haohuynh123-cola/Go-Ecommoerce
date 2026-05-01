@@ -6,6 +6,7 @@ import (
 
 	"haohuynh123-cola/ecommce/internal/platform/config"
 	"haohuynh123-cola/ecommce/internal/platform/database"
+	"haohuynh123-cola/ecommce/internal/platform/logger"
 	"haohuynh123-cola/ecommce/internal/platform/redisclient"
 	"haohuynh123-cola/ecommce/internal/platform/server"
 	"haohuynh123-cola/ecommce/internal/shared/middleware"
@@ -47,7 +48,8 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	// Initialize Log system
+	// Initialize Log system (slog, level-filtered, stdout + file).
+	logger.InitLogger(&cfg.Log)
 
 	r := server.SetupRouter(db, redisClient, cfg) // Initialize routes
 

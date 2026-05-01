@@ -41,6 +41,12 @@ type JWTConfig struct {
 type LogConfig struct {
 	Level    string `mapstructure:"level"`
 	FilePath string `mapstructure:"file_path"`
+	// MaxAgeDays controls how long rotated log files are retained.
+	// Files older than this are deleted automatically. Defaults to 7.
+	MaxAgeDays int `mapstructure:"max_age_days"`
+	// RotationHours controls how often a new log file is opened.
+	// Defaults to 24 (one file per day).
+	RotationHours int `mapstructure:"rotation_hours"`
 }
 
 type SMTPConfig struct {
