@@ -20,7 +20,6 @@ type MeResult struct {
 	Email  string `db:"email" json:"email"`
 	Verify bool   `db:"verify" json:"verify"`
 }
-
 type UserLogin struct {
 	Email    string `db:"email" json:"email"`
 	Password string `db:"password" json:"password"`

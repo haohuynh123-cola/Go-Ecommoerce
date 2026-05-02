@@ -12,6 +12,7 @@ import { RegisterPage } from '@/pages/storefront/RegisterPage';
 import { CartPage } from '@/pages/storefront/CartPage';
 import { OrdersPage } from '@/pages/storefront/OrdersPage';
 import { OrderDetailPage } from '@/pages/storefront/OrderDetailPage';
+import { HistoryViewedPage } from '@/pages/storefront/HistoryViewedPage';
 
 // Admin pages
 import { AdminLoginPage } from '@/pages/admin/AdminLoginPage';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <ProductsPage /> },
       { path: 'products/:id', element: <ProductDetailPage /> },
+      { path: 'history', element: <HistoryViewedPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       {

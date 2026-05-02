@@ -1,44 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ComponentType, FormEvent, SVGProps } from 'react';
+import type { FormEvent } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 
 import { useAuth } from '@/hooks/useAuth';
 import { getCartItems } from '@/lib/api/cart';
+import { CATEGORIES } from '@/lib/utils/catalog';
 import {
-  IconAccessory,
-  IconCamera,
   IconCart,
   IconChevronDown,
-  IconHeadphones,
   IconHotline,
-  IconLaptop,
   IconMenu,
-  IconMonitor,
-  IconPhone,
   IconSearch,
   IconStore,
-  IconTablet,
   IconUser,
-  IconWatch,
 } from './icons';
-
-type CategoryItem = {
-  label: string;
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
-};
-
-const CATEGORIES: CategoryItem[] = [
-  { label: 'Phones',      Icon: IconPhone },
-  { label: 'Laptops',     Icon: IconLaptop },
-  { label: 'Tablets',     Icon: IconTablet },
-  { label: 'Watches',     Icon: IconWatch },
-  { label: 'Audio',       Icon: IconHeadphones },
-  { label: 'Cameras',     Icon: IconCamera },
-  { label: 'Monitors',    Icon: IconMonitor },
-  { label: 'Accessories', Icon: IconAccessory },
-];
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -228,6 +205,14 @@ export function Header() {
                       My orders
                     </Link>
                     <Link
+                      to="/history"
+                      role="menuitem"
+                      className="block px-3 py-2 rounded-[var(--radius-sm)] text-sm text-[var(--color-ink-secondary)] hover:bg-[var(--color-brand-subtle)] hover:text-[var(--color-brand)] transition-colors"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      History viewed
+                    </Link>
+                    <Link
                       to="/admin"
                       role="menuitem"
                       className="block px-3 py-2 rounded-[var(--radius-sm)] text-sm text-[var(--color-ink-secondary)] hover:bg-[var(--color-brand-subtle)] hover:text-[var(--color-brand)] transition-colors"
@@ -266,28 +251,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* ─── Category strip (desktop) ──────────────────────────── */}
-        <nav
-          className="hidden lg:block border-t border-[var(--color-border-subtle)]"
-          aria-label="Categories"
-        >
-          <div className="container flex items-center gap-1 h-12 overflow-x-auto">
-            <NavLink to="/" end className={categoryLinkClass}>
-              All products
-            </NavLink>
-            {CATEGORIES.map(({ label, Icon }) => (
-              <NavLink
-                key={label}
-                to={`/?name=${encodeURIComponent(label)}`}
-                className={categoryLinkClass}
-              >
-                <Icon width={16} height={16} />
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
-
         {/* ─── Mobile drawer ─────────────────────────────────────── */}
         {mobileOpen && (
           <div
@@ -310,10 +273,10 @@ export function Header() {
               >
                 All products
               </NavLink>
-              {CATEGORIES.map(({ label, Icon }) => (
+              {CATEGORIES.map(({ slug, label, Icon }) => (
                 <NavLink
-                  key={label}
-                  to={`/?name=${encodeURIComponent(label)}`}
+                  key={slug}
+                  to={`/?category=${slug}`}
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     clsx(
@@ -351,14 +314,5 @@ export function Header() {
         )}
       </div>
     </header>
-  );
-}
-
-function categoryLinkClass({ isActive }: { isActive: boolean }) {
-  return clsx(
-    'flex items-center gap-2 px-3 h-9 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-    isActive
-      ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)]'
-      : 'text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-ink)]',
   );
 }

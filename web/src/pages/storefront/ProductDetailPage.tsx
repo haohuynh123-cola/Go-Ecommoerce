@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -6,6 +7,7 @@ import { getProduct } from '@/lib/api/products';
 import { addToCart } from '@/lib/api/cart';
 import { formatPrice } from '@/lib/utils/format';
 import { useAuth } from '@/hooks/useAuth';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import {
   getProductBadgeMock,
   getProductPlaceholderGradient,
@@ -19,6 +21,9 @@ import {
   IconShield,
   IconTruck,
 } from '@/components/layout/icons';
+import { ProductComments } from '@/components/product/ProductComments/ProductComments';
+import { RelatedProducts } from '@/components/product/RelatedProducts';
+import { RecentlyViewed } from '@/components/product/RecentlyViewed';
 import type { Product } from '@/lib/api/types';
 
 const TRUST_ITEMS = [
@@ -45,6 +50,12 @@ export function ProductDetailPage() {
     queryFn: () => getProduct(productId),
     enabled: !isNaN(productId),
   });
+
+  // Cache the viewed product ID once it has resolved successfully.
+  const { track: trackRecentlyViewed } = useRecentlyViewed();
+  useEffect(() => {
+    if (product?.id) trackRecentlyViewed(product.id);
+  }, [product?.id, trackRecentlyViewed]);
 
   const addMutation = useMutation({
     mutationFn: () => addToCart(productId, quantity),
@@ -125,7 +136,7 @@ export function ProductDetailPage() {
           <ProductGallery product={product} activeThumb={activeThumb} onSelect={setActiveThumb} />
 
           {/* ─── Info column ───────────────────────────────── */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
+          <div className="lg:col-span-8 flex flex-col gap-5">
             {/* Tag row */}
             <div className="flex flex-wrap items-center gap-2">
               {promo && (
@@ -146,7 +157,7 @@ export function ProductDetailPage() {
               <span className="ml-auto text-xs text-[var(--color-ink-muted)] font-mono">{product.sku}</span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] leading-tight">
+            <h1 className="text-lg md:text-xl font-bold tracking-tight text-[var(--color-ink)] leading-snug">
               {product.name}
             </h1>
 
@@ -303,6 +314,15 @@ export function ProductDetailPage() {
             {product.description || 'No description available for this product.'}
           </p>
         </section>
+
+        {/* ─── Reviews ──────────────────────────────────────── */}
+        <ProductComments productId={productId} />
+
+        {/* ─── Related products ─────────────────────────────── */}
+        <RelatedProducts currentProductId={productId} />
+
+        {/* ─── Recently viewed ──────────────────────────────── */}
+        <RecentlyViewed excludeId={productId} />
       </div>
     </div>
   );
@@ -317,17 +337,133 @@ interface ProductGalleryProps {
 function ProductGallery({ product, activeThumb, onSelect }: ProductGalleryProps) {
   const gradient = getProductPlaceholderGradient(product);
   const letter = product.name.charAt(0).toUpperCase();
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Each "view" is the same gradient with a slightly rotated hue, just for thumbnail variety.
   const thumbs = [0, 1, 2, 3];
 
+  // Close lightbox on Escape; lock body scroll while open.
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsLightboxOpen(false);
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isLightboxOpen]);
+
   return (
-    <div className="lg:col-span-5">
-      {/* Main image */}
-      <div className="relative aspect-square rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-muted)] border border-[var(--color-border-subtle)]">
-        <div
+    <div className="lg:col-span-4">
+      <div className="flex gap-3 max-w-md lg:max-w-none">
+        {/* Thumbnails — vertical strip on the left */}
+        <ul className="flex flex-col gap-2 w-16 md:w-20 flex-shrink-0">
+          {thumbs.map((i) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => onSelect(i)}
+                className={`block w-full aspect-square rounded-[var(--radius-md)] overflow-hidden border-2 transition-colors ${
+                  activeThumb === i
+                    ? 'border-[var(--color-brand)]'
+                    : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)]'
+                }`}
+                aria-label={`View ${i + 1}`}
+                aria-pressed={activeThumb === i}
+              >
+                <span
+                  aria-hidden
+                  className="block w-full h-full"
+                  style={{
+                    background: gradient,
+                    filter: `hue-rotate(${i * 12}deg) brightness(${i === activeThumb ? 1 : 0.92})`,
+                  }}
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {/* Main image — smaller, hover-zoom on active, click for full-size lightbox */}
+        <button
+          type="button"
+          onClick={() => setIsLightboxOpen(true)}
+          aria-label="Open image at full size"
+          className="group relative aspect-square flex-1 rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-muted)] border border-[var(--color-border-subtle)] cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+        >
+          <span
+            aria-hidden
+            className="absolute inset-0 transition-transform duration-[var(--duration-slow)] ease-out group-hover:scale-110 group-focus-visible:scale-110"
+            style={{
+              background: gradient,
+              transform: `rotate(${activeThumb * 4}deg) scale(1.05)`,
+              filter: `hue-rotate(${activeThumb * 12}deg)`,
+            }}
+          />
+          <span
+            aria-hidden
+            className="absolute inset-0 grid place-items-center text-white/95 text-[7rem] md:text-[8rem] font-extrabold tracking-tight drop-shadow-lg select-none"
+          >
+            {letter}
+          </span>
+          <span
+            aria-hidden
+            className="absolute bottom-2 right-2 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-black/55 text-white text-[11px] font-semibold backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            ⤢ View full
+          </span>
+        </button>
+      </div>
+
+      {isLightboxOpen && (
+        <Lightbox
+          gradient={gradient}
+          letter={letter}
+          activeThumb={activeThumb}
+          onClose={() => setIsLightboxOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface LightboxProps {
+  gradient: string;
+  letter: string;
+  activeThumb: number;
+  onClose: () => void;
+}
+
+function Lightbox({ gradient, letter, activeThumb, onClose }: LightboxProps) {
+  // Portal to document.body so the fixed overlay isn't contained by any
+  // transformed ancestor (e.g. the .page-enter wrapper).
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Product image — full size"
+      onClick={onClose}
+      className="fixed inset-0 z-[100] grid place-items-center bg-black/80 backdrop-blur-sm p-4 md:p-8"
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close full-size image"
+        className="absolute top-4 right-4 grid place-items-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white z-10"
+      >
+        ×
+      </button>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-[min(90vw,80vh)] aspect-square rounded-[var(--radius-lg)] overflow-hidden shadow-2xl"
+      >
+        <span
           aria-hidden
-          className="absolute inset-0 transition-all duration-[var(--duration-slow)]"
+          className="absolute inset-0"
           style={{
             background: gradient,
             transform: `rotate(${activeThumb * 4}deg) scale(1.05)`,
@@ -336,39 +472,13 @@ function ProductGallery({ product, activeThumb, onSelect }: ProductGalleryProps)
         />
         <span
           aria-hidden
-          className="absolute inset-0 grid place-items-center text-white/95 text-[10rem] font-extrabold tracking-tight drop-shadow-lg select-none"
+          className="absolute inset-0 grid place-items-center text-white/95 font-extrabold tracking-tight drop-shadow-2xl select-none"
+          style={{ fontSize: 'min(40vw, 36vh)', lineHeight: 1 }}
         >
           {letter}
         </span>
       </div>
-
-      {/* Thumbnails */}
-      <ul className="mt-3 grid grid-cols-4 gap-2">
-        {thumbs.map((i) => (
-          <li key={i}>
-            <button
-              type="button"
-              onClick={() => onSelect(i)}
-              className={`block w-full aspect-square rounded-[var(--radius-md)] overflow-hidden border-2 transition-colors ${
-                activeThumb === i
-                  ? 'border-[var(--color-brand)]'
-                  : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)]'
-              }`}
-              aria-label={`View ${i + 1}`}
-              aria-pressed={activeThumb === i}
-            >
-              <span
-                aria-hidden
-                className="block w-full h-full"
-                style={{
-                  background: gradient,
-                  filter: `hue-rotate(${i * 12}deg) brightness(${i === activeThumb ? 1 : 0.92})`,
-                }}
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,6 +1,10 @@
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { Header } from './Header';
 import { HomeHero } from './HomeHero';
+import { CATEGORIES } from '@/lib/utils/catalog';
 
 export function StorefrontLayout() {
   const { pathname, search } = useLocation();
@@ -37,37 +41,13 @@ function SiteFooter() {
             The place to shop the latest phones, laptops, and tech accessories.
             Authentic products, expert support, and fast nationwide shipping.
           </p>
-          <form className="mt-6 max-w-sm" onSubmit={(e) => e.preventDefault()}>
-            <label htmlFor="newsletter" className="text-xs font-semibold uppercase tracking-widest text-white/70">
-              Get deals in your inbox
-            </label>
-            <div className="mt-2 flex items-stretch gap-2">
-              <input
-                id="newsletter"
-                type="email"
-                placeholder="you@example.com"
-                className="flex-1 h-11 px-4 rounded-full bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--color-brand)] focus:bg-white/15 transition"
-              />
-              <button
-                type="submit"
-                className="h-11 px-5 rounded-full bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-semibold transition-colors"
-              >
-                Subscribe
-              </button>
-            </div>
-          </form>
+          <NewsletterForm />
         </div>
 
         {/* Link columns */}
         <FooterColumn
           title="Shop"
-          links={[
-            { label: 'Phones',     to: '/?name=Phones' },
-            { label: 'Laptops',    to: '/?name=Laptops' },
-            { label: 'Tablets',    to: '/?name=Tablets' },
-            { label: 'Audio',      to: '/?name=Audio' },
-            { label: 'Accessories', to: '/?name=Accessories' },
-          ]}
+          links={CATEGORIES.map((c) => ({ label: c.label, to: `/?category=${c.slug}` }))}
         />
         <FooterColumn
           title="Support"
@@ -110,6 +90,147 @@ function SiteFooter() {
         </div>
       </div>
     </footer>
+  );
+}
+
+// ─── Newsletter form ─────────────────────────────────────────────
+//
+// TODO(backend): wire to a real `POST /newsletter/subscribe` endpoint.
+// For now, validates client-side and persists the subscribed email in
+// localStorage so a returning visitor sees the "already subscribed" state.
+
+const NEWSLETTER_KEY = 'ecommce.newsletter_email';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type NewsletterStatus = 'idle' | 'submitting' | 'success' | 'error' | 'subscribed';
+
+function NewsletterForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<NewsletterStatus>('idle');
+  const [message, setMessage] = useState('');
+
+  // On mount: if the user has already subscribed on this device, show that.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(NEWSLETTER_KEY);
+      if (saved && EMAIL_RE.test(saved)) {
+        setEmail(saved);
+        setStatus('subscribed');
+      }
+    } catch {
+      /* localStorage unavailable — keep idle */
+    }
+  }, []);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!EMAIL_RE.test(trimmed)) {
+      setStatus('error');
+      setMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setStatus('submitting');
+    setMessage('');
+
+    try {
+      // Simulated network call; replace with real API when the backend ships.
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      window.localStorage.setItem(NEWSLETTER_KEY, trimmed);
+      setStatus('success');
+      setMessage('You\'re in. Watch your inbox for deals.');
+    } catch {
+      setStatus('error');
+      setMessage('Something went wrong — please try again.');
+    }
+  }
+
+  function handleUnsubscribe() {
+    try {
+      window.localStorage.removeItem(NEWSLETTER_KEY);
+    } catch {
+      /* ignore */
+    }
+    setEmail('');
+    setStatus('idle');
+    setMessage('');
+  }
+
+  const isSubmitting = status === 'submitting';
+  const isDone = status === 'success' || status === 'subscribed';
+
+  return (
+    <form className="mt-6 max-w-sm" onSubmit={handleSubmit} noValidate>
+      <label
+        htmlFor="newsletter"
+        className="text-xs font-semibold uppercase tracking-widest text-white/70"
+      >
+        Get deals in your inbox
+      </label>
+      <div className="mt-2 flex items-stretch gap-2">
+        <input
+          id="newsletter"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (status === 'error' || status === 'success') {
+              setStatus('idle');
+              setMessage('');
+            }
+          }}
+          disabled={isSubmitting || isDone}
+          aria-invalid={status === 'error'}
+          aria-describedby="newsletter-msg"
+          placeholder="you@example.com"
+          className="flex-1 h-11 px-4 rounded-full bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--color-brand)] focus:bg-white/15 disabled:opacity-60 disabled:cursor-not-allowed transition"
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting || isDone}
+          aria-live="polite"
+          className={clsx(
+            'h-11 px-5 rounded-full text-white text-sm font-semibold transition-colors disabled:cursor-not-allowed',
+            isDone
+              ? 'bg-[var(--color-success)] hover:bg-[var(--color-success)]'
+              : 'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] disabled:opacity-70',
+          )}
+        >
+          {isSubmitting ? 'Subscribing…' : isDone ? 'Subscribed ✓' : 'Subscribe'}
+        </button>
+      </div>
+
+      <p
+        id="newsletter-msg"
+        role={status === 'error' ? 'alert' : 'status'}
+        aria-live="polite"
+        className={clsx(
+          'mt-2 text-xs min-h-[1.25rem]',
+          status === 'error' && 'text-[var(--color-error)]',
+          status === 'success' && 'text-[var(--color-success)]',
+          status === 'subscribed' && 'text-white/60',
+          (status === 'idle' || status === 'submitting') && 'text-white/50',
+        )}
+      >
+        {status === 'subscribed'
+          ? `You're subscribed as ${email}.`
+          : message || (status === 'idle' ? 'No spam — unsubscribe any time.' : '')}
+      </p>
+
+      {status === 'subscribed' && (
+        <button
+          type="button"
+          onClick={handleUnsubscribe}
+          className="mt-1 text-[11px] font-semibold text-white/55 hover:text-white underline-offset-4 hover:underline transition-colors"
+        >
+          Unsubscribe
+        </button>
+      )}
+    </form>
   );
 }
 

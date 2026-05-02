@@ -143,3 +143,51 @@ export interface OrderActivity {
   description: string;
   activity_at: string;
 }
+
+// ─── Product Comments ──────────────────────────────────────────────────────
+
+/**
+ * A single comment/review on a product.
+ *
+ * Assumed REST contract (frontend-defined — backend must implement):
+ *
+ *   GET  /products/:productId/comments?page=&page_size=
+ *        → ApiPaginated<ProductComment>
+ *        Top-level comments only (parent_comment_id IS NULL), ordered newest-first.
+ *        Each top-level comment carries a nested `replies` array (up to 50 entries)
+ *        that the backend joins in one query. Replies themselves have replies: [].
+ *
+ *   POST /products/:productId/comments
+ *        body: CreateProductCommentPayload
+ *        → ApiSuccess<ProductComment>
+ *        Authenticated. For replies: include parent_comment_id; rating must be 0.
+ *        For top-level: parent_comment_id must be null; rating must be 1–5.
+ *
+ * user_name is the display name of the commenter, populated by the backend join.
+ */
+export interface ProductComment {
+  id: number;
+  product_id: number;
+  user_id: number;
+  /** Display name populated via backend JOIN on users.name. */
+  user_name: string;
+  parent_comment_id: number | null;
+  comment: string;
+  /** 1–5 for top-level comments; 0 for replies. */
+  rating: number;
+  created_at: string;
+  updated_at: string;
+  /**
+   * Nested replies (one level deep, capped at 50 by the backend).
+   * Always present as an array (empty for replies and when there are none).
+   */
+  replies: ProductComment[];
+}
+
+export interface CreateProductCommentPayload {
+  comment: string;
+  /** 1–5 for top-level; 0 for replies (enforced client-side). */
+  rating: number;
+  /** null for top-level; parent comment id for replies. */
+  parent_comment_id: number | null;
+}
