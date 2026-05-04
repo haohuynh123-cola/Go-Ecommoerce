@@ -316,7 +316,7 @@ export function ProductDetailPage() {
         </section>
 
         {/* ─── Reviews ──────────────────────────────────────── */}
-        <ProductComments productId={productId} />
+        <ProductComments product={product} />
 
         {/* ─── Related products ─────────────────────────────── */}
         <RelatedProducts currentProductId={productId} />

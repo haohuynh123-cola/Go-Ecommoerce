@@ -20,6 +20,7 @@ const (
 	productCacheTTL = 5 * time.Minute
 	cartCacheTTL    = 30 * time.Minute
 	orderCacheTTL   = 30 * time.Minute
+	commentCacheTTL = 30 * time.Minute
 )
 
 // SetupRouter initializes the Gin router and registers all routes
@@ -54,6 +55,9 @@ func SetupRouter(db *sqlx.DB, rdb *redis.Client, cfg *config.Config) *gin.Engine
 
 	orderHandler := di.InitializeOrderHandler(db, rdb, orderCacheTTL, cfg.JWT)
 	orderHandler.RegisterRoutes(r)
+
+	commentHandler := di.InitializeCommentHandler(db, rdb, commentCacheTTL, cfg.JWT)
+	commentHandler.RegisterRoutes(r)
 
 	return r
 }

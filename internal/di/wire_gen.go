@@ -7,13 +7,13 @@
 package di
 
 import (
-	"time"
-
 	"haohuynh123-cola/ecommce/internal/modules/auth"
 	"haohuynh123-cola/ecommce/internal/modules/cart"
+	"haohuynh123-cola/ecommce/internal/modules/comment"
 	"haohuynh123-cola/ecommce/internal/modules/order"
 	"haohuynh123-cola/ecommce/internal/modules/product"
 	"haohuynh123-cola/ecommce/internal/platform/config"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -23,9 +23,9 @@ import (
 
 func InitializeAuthHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig, smtpCfg config.SMTPConfig, oauthCfg config.OAuthConfig) *auth.AuthHandler {
 	iUserRepository := auth.NewUserRepository(db)
-	secret := auth.ProvideJWTSecret(jwtCfg)
+	string2 := auth.ProvideJWTSecret(jwtCfg)
 	userCache := auth.NewUserCache(rdb, cacheTTL)
-	iAuthService := auth.NewAuthService(iUserRepository, secret, userCache, smtpCfg, oauthCfg)
+	iAuthService := auth.NewAuthService(iUserRepository, string2, userCache, smtpCfg, oauthCfg)
 	authHandler := auth.NewAuthHandler(iAuthService, jwtCfg)
 	return authHandler
 }
@@ -55,4 +55,11 @@ func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Durati
 	orderService := order.NewOrderService(orderRepository, orderItemRepository, productRepository, orderActivityRepository, orderCache)
 	orderHandler := order.NewOrderHandler(orderService, jwtCfg)
 	return orderHandler
+}
+
+func InitializeCommentHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *comment.CommentHandler {
+	commentRepository := comment.NewCommentRepository(db)
+	commentService := comment.NewCommentService(commentRepository)
+	commentHandler := comment.NewCommentHandler(commentService)
+	return commentHandler
 }

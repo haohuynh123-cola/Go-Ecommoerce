@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { createProductComment } from '@/lib/api/comments';
+import { useAuth } from '@/hooks/useAuth';
 import { InlineError } from '@/components/ui';
 import { Textarea } from '@/components/ui';
 import { StarRating } from './StarRating';
@@ -11,6 +12,8 @@ interface CommentFormProps {
   productId: number;
   /** When set, this is a reply form — rating control is hidden, parent_comment_id is set. */
   parentId?: number;
+  /** Optional seed text for the textarea (e.g. "@username " when replying to a reply). */
+  initialValue?: string;
   /** Called after a successful submission (e.g. to collapse the inline reply box). */
   onSuccess?: () => void;
 }
@@ -18,18 +21,23 @@ interface CommentFormProps {
 const MIN_LENGTH = 5;
 const MAX_LENGTH = 1000;
 
-export function CommentForm({ productId, parentId, onSuccess }: CommentFormProps) {
+export function CommentForm({ productId, parentId, initialValue = '', onSuccess }: CommentFormProps) {
   const isReply = parentId !== undefined;
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState(initialValue);
   const [rating, setRating] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ comment?: string; rating?: string }>({});
   const [successMsg, setSuccessMsg] = useState('');
 
   const mutation = useMutation({
-    mutationFn: (payload: CreateProductCommentPayload) =>
-      createProductComment(productId, payload),
+    mutationFn: (payload: CreateProductCommentPayload) => {
+      if (!user) {
+        throw new Error('You must be signed in to post a comment.');
+      }
+      return createProductComment(productId, user.id, payload);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['product-comments', productId] });
       setComment('');

@@ -8,6 +8,7 @@ import (
 
 	"haohuynh123-cola/ecommce/internal/modules/auth"
 	"haohuynh123-cola/ecommce/internal/modules/cart"
+	"haohuynh123-cola/ecommce/internal/modules/comment"
 	"haohuynh123-cola/ecommce/internal/modules/order"
 	"haohuynh123-cola/ecommce/internal/modules/product"
 	"haohuynh123-cola/ecommce/internal/platform/config"
@@ -34,5 +35,10 @@ func InitializeCartHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duratio
 
 func InitializeOrderHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *order.OrderHandler {
 	wire.Build(order.WireSet)
+	return nil
+}
+
+func InitializeCommentHandler(db *sqlx.DB, rdb *redis.Client, cacheTTL time.Duration, jwtCfg config.JWTConfig) *comment.CommentHandler {
+	wire.Build(comment.WireSet)
 	return nil
 }
