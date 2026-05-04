@@ -1,9 +1,11 @@
 package product
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	productdto "haohuynh123-cola/ecommce/internal/modules/product/dto"
 	"haohuynh123-cola/ecommce/internal/shared/errs"
@@ -45,6 +47,8 @@ func (h *ProductHandler) RegisterRoutes(r *gin.Engine) {
 // @Failure      500       {object}  response.ErrorResponseSwag
 // @Router       /products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to get all products
 	var req productdto.ProductFilter
 
@@ -54,7 +58,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		return
 	}
 
-	products, totalItems, err := h.productService.ListProducts(c.Request.Context(), req)
+	products, totalItems, err := h.productService.ListProducts(ctx, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeNotFound, "failed to get products"))
 		return
@@ -64,6 +68,9 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 }
 
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	// Implement logic to get a product by ID
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 
@@ -72,7 +79,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 		return
 	}
 
-	product, err := h.productService.GetProductByID(c.Request.Context(), int64(id))
+	product, err := h.productService.GetProductByID(ctx, int64(id))
 	if err != nil {
 		if err == errs.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found"))
@@ -98,13 +105,16 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	var req productdto.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse(errs.ErrCodeInvalidRequest, "invalid request"))
 		return
 	}
 
-	createdProduct, err := h.productService.CreateProduct(c.Request.Context(), &req)
+	createdProduct, err := h.productService.CreateProduct(ctx, &req)
 
 	if err != nil {
 		if err == errs.ErrSKUAlreadyExists {
@@ -133,6 +143,9 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Failure      500                   {object}  response.ErrorResponseSwag
 // @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+
+	defer cancel()
 	// Implement logic to update an existing product
 	var req productdto.UpdateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -147,7 +160,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	updatedProduct, err := h.productService.UpdateProduct(c.Request.Context(), int64(id), &req)
+	updatedProduct, err := h.productService.UpdateProduct(ctx, int64(id), &req)
 	if err != nil {
 		if err == errs.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found"))
@@ -173,6 +186,8 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Failure      500 {object}  response.ErrorResponseSwag
 // @Router       /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to delete a product
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 
@@ -181,7 +196,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	_, err = h.productService.DeleteProduct(c.Request.Context(), int64(id))
+	_, err = h.productService.DeleteProduct(ctx, int64(id))
 	if err != nil {
 		if errors.Is(err, errs.ErrProductNotFound) {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found"))

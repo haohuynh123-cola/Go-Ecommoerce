@@ -1,8 +1,10 @@
 package cart
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	cartdto "haohuynh123-cola/ecommce/internal/modules/cart/dto"
 	"haohuynh123-cola/ecommce/internal/platform/config"
@@ -51,6 +53,8 @@ func (h *CartHandler) RegisterRoutes(r *gin.Engine) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /cart/add [post]
 func (h *CartHandler) AddToCart(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to add item to cart
 	var req cartdto.AddToCartRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -66,7 +70,7 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 
 	req.UserID = userID
 
-	if err := h.service.AddToCart(c.Request.Context(), &req); err != nil {
+	if err := h.service.AddToCart(ctx, &req); err != nil {
 		if err == errs.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found"))
 			return
@@ -90,6 +94,8 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /cart/items [get]
 func (h *CartHandler) GetCartItems(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to get cart items for a user
 	userID := c.GetInt64("user_id")
 	if userID == 0 {
@@ -97,7 +103,7 @@ func (h *CartHandler) GetCartItems(c *gin.Context) {
 		return
 	}
 
-	items, err := h.service.GetCartItems(c.Request.Context(), userID)
+	items, err := h.service.GetCartItems(ctx, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeInternal, "failed to get cart items"))
 		return
@@ -121,6 +127,8 @@ func (h *CartHandler) GetCartItems(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /cart/remove [post]
 func (h *CartHandler) RemoveFromCart(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to remove item from cart
 	var req cartdto.RemoveFromCartRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,7 +142,7 @@ func (h *CartHandler) RemoveFromCart(c *gin.Context) {
 		return
 	}
 	req.UserID = userID
-	if err := h.service.RemoveFromCart(c.Request.Context(), &req); err != nil {
+	if err := h.service.RemoveFromCart(ctx, &req); err != nil {
 		fmt.Printf("Error removing item from cart: %v\n", err)
 		if err == errs.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found in cart"))
@@ -162,6 +170,8 @@ func (h *CartHandler) RemoveFromCart(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /cart/update [put]
 func (h *CartHandler) UpdateCartItem(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to update cart item quantity
 	var req cartdto.UpdateCartItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -177,7 +187,7 @@ func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 
 	req.UserID = userID
 
-	if err := h.service.UpdateCartItem(c.Request.Context(), &req); err != nil {
+	if err := h.service.UpdateCartItem(ctx, &req); err != nil {
 		if err == errs.ErrProductNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found in cart"))
 			return
@@ -200,6 +210,8 @@ func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /cart/clear [post]
 func (h *CartHandler) ClearCart(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to clear cart for a user
 	userID := c.GetInt64("user_id")
 	if userID == 0 {
@@ -207,7 +219,7 @@ func (h *CartHandler) ClearCart(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.ClearCart(c.Request.Context(), userID); err != nil {
+	if err := h.service.ClearCart(ctx, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse(errs.ErrCodeInternal, "failed to clear cart"))
 		return
 	}

@@ -1,9 +1,11 @@
 package order
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	orderdto "haohuynh123-cola/ecommce/internal/modules/order/dto"
 	"haohuynh123-cola/ecommce/internal/platform/config"
@@ -50,6 +52,9 @@ func (h *OrderHandler) RegisterRoutes(r *gin.Engine) {
 // @Failure 500 {object} response.ErrorResponseSwag
 // @Router /orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	// Implement logic to create a new order
 	userID := c.GetInt64("user_id")
 	if userID == 0 {
@@ -65,7 +70,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	req.UserID = userID
 
-	o, err := h.service.CreateOrder(c.Request.Context(), &req)
+	o, err := h.service.CreateOrder(ctx, &req)
 	if err != nil {
 		if errors.Is(err, errs.ErrProductNotFound) {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeProductNotFound, "product not found"))
@@ -91,6 +96,8 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponseSwag
 // @Router /orders [get]
 func (h *OrderHandler) GetOrdersByUserID(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to retrieve orders by user ID
 	userID := c.GetInt64("user_id")
 	if userID == 0 {
@@ -98,7 +105,7 @@ func (h *OrderHandler) GetOrdersByUserID(c *gin.Context) {
 		return
 	}
 
-	orders, err := h.service.GetOrdersByUserID(c.Request.Context(), userID)
+	orders, err := h.service.GetOrdersByUserID(ctx, userID)
 	if err != nil {
 		if err == errs.ErrOrderNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeOrderNotFound, "no orders found for user"))
@@ -130,6 +137,8 @@ func (h *OrderHandler) GetOrdersByUserID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponseSwag
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrderByID(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	// Implement logic to retrieve order details by order ID
 	orderID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -137,7 +146,7 @@ func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	o, err := h.service.GetOrderByID(c.Request.Context(), orderID)
+	o, err := h.service.GetOrderByID(ctx, orderID)
 	if err != nil {
 		if err == errs.ErrOrderNotFound {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeOrderNotFound, "order not found"))
@@ -170,6 +179,8 @@ func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponseSwag
 // @Router /orders/{id}/status [patch]
 func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 	orderID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse(errs.ErrCodeInvalidRequest, "invalid order ID"))
@@ -182,7 +193,7 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	o, err := h.service.UpdateOrderStatus(c.Request.Context(), orderID, req.Status)
+	o, err := h.service.UpdateOrderStatus(ctx, orderID, req.Status)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidOrderStatus) {
 			c.JSON(http.StatusBadRequest, response.ErrorResponse(errs.ErrCodeInvalidRequest, "status must be one of: Created, Confirmed, Shipping, Delivered, Cancelled"))
@@ -214,13 +225,16 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponseSwag
 // @Router /orders/{id}/activities [get]
 func (h *OrderHandler) GetOrderActivities(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	orderID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse(errs.ErrCodeInvalidRequest, "invalid order ID"))
 		return
 	}
 
-	activities, err := h.service.GetActivitiesByOrderID(c.Request.Context(), orderID)
+	activities, err := h.service.GetActivitiesByOrderID(ctx, orderID)
 	if err != nil {
 		if errors.Is(err, errs.ErrOrderNotFound) {
 			c.JSON(http.StatusNotFound, response.ErrorResponse(errs.ErrCodeOrderNotFound, "order not found"))

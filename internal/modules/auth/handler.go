@@ -136,6 +136,9 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	var req authdto.RequestRegister
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -143,9 +146,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.ValidationError(err))
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	// Implement registration logic here
 	user, err := h.service.Register(ctx, req)
@@ -205,6 +205,9 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Failure      500  {object}  response.ErrorResponseSwag
 // @Router       /auth/verify-otp [post]
 func (h *AuthHandler) VerifyOTP(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	var req authdto.RequestVerifyOTP
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -212,9 +215,6 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.ValidationError(err))
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	_, err := h.service.VerifyOTP(ctx, req)
 	if err != nil {
@@ -234,6 +234,9 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 }
 
 func (h *AuthHandler) ResendOTP(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	var req authdto.RequestResendOTP
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -241,9 +244,6 @@ func (h *AuthHandler) ResendOTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.ValidationError(err))
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	_, err := h.service.ResendOTP(ctx, req)
 	if err != nil {
